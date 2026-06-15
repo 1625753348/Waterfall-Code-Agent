@@ -1,0 +1,377 @@
+{
+  "project_id": "e0e5c2de-34b4-47ad-af70-45c0816428ec",
+  "project_name": "Project-31316",
+  "created_at": "2026-06-15T07:06:16.042016",
+  "updated_at": "2026-06-15T07:06:16.042016",
+  "requirements": {
+    "raw_input": "",
+    "vocab_gaps": [
+      "user_role",
+      "auth",
+      "error_handling",
+      "validation",
+      "data_persistence",
+      "pagination",
+      "search",
+      "notification",
+      "audit",
+      "permission",
+      "concurrency",
+      "performance",
+      "i18n"
+    ],
+    "items": [
+      {
+        "req_id": "REQ-001",
+        "title": "",
+        "description": "",
+        "priority": "medium",
+        "category": "functional",
+        "status": "draft",
+        "gap_notes": null
+      }
+    ],
+    "version": "1.0",
+    "status": "approved"
+  },
+  "domain_model": {
+    "actors": [
+      {
+        "actor_id": "ACT-001",
+        "name": "用户",
+        "description": "系统用户"
+      }
+    ],
+    "use_cases": [
+      {
+        "uc_id": "UC-001",
+        "name": "",
+        "description": "",
+        "actors": [
+          "ACT-001"
+        ],
+        "preconditions": [
+          "用户已进入系统"
+        ],
+        "postconditions": [
+          "操作完成，数据已保存"
+        ],
+        "main_flow": [
+          "1. 用户进入模块",
+          "2. 系统展示界面",
+          "3. 用户执行操作",
+          "4. 系统校验输入数据",
+          "5. 系统处理请求并返回结果",
+          "6. 系统记录操作日志"
+        ],
+        "alt_flows": [
+          [
+            "异常处理：系统返回错误信息"
+          ]
+        ],
+        "req_links": [
+          "REQ-001"
+        ]
+      }
+    ],
+    "plantuml_code": "@startuml\nleft to right direction\nskinparam packageStyle rectangle\n\nactor 用户 as User\nactor 用户 as ACT001\n\nrectangle 系统 {\n  usecase \"\" as UC001\n}\n\nACT001 --> UC001\n@enduml",
+    "version": "1.0",
+    "status": "approved"
+  },
+  "database": {
+    "tables": [
+      {
+        "name": "users",
+        "columns": [
+          {
+            "name": "id",
+            "dtype": "BIGINT",
+            "nullable": false,
+            "pk": true,
+            "fk": null,
+            "default": null,
+            "comment": "主键ID"
+          },
+          {
+            "name": "username",
+            "dtype": "VARCHAR(50)",
+            "nullable": false,
+            "pk": false,
+            "fk": null,
+            "default": null,
+            "comment": "用户名"
+          },
+          {
+            "name": "password_hash",
+            "dtype": "VARCHAR(255)",
+            "nullable": false,
+            "pk": false,
+            "fk": null,
+            "default": null,
+            "comment": "密码哈希"
+          },
+          {
+            "name": "email",
+            "dtype": "VARCHAR(100)",
+            "nullable": true,
+            "pk": false,
+            "fk": null,
+            "default": null,
+            "comment": "邮箱"
+          },
+          {
+            "name": "phone",
+            "dtype": "VARCHAR(20)",
+            "nullable": true,
+            "pk": false,
+            "fk": null,
+            "default": null,
+            "comment": "手机号"
+          },
+          {
+            "name": "status",
+            "dtype": "TINYINT",
+            "nullable": false,
+            "pk": false,
+            "fk": null,
+            "default": "1",
+            "comment": "状态: 1=启用, 0=禁用"
+          },
+          {
+            "name": "created_at",
+            "dtype": "DATETIME",
+            "nullable": false,
+            "pk": false,
+            "fk": null,
+            "default": "CURRENT_TIMESTAMP",
+            "comment": "创建时间"
+          },
+          {
+            "name": "updated_at",
+            "dtype": "DATETIME",
+            "nullable": false,
+            "pk": false,
+            "fk": null,
+            "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+            "comment": "更新时间"
+          }
+        ],
+        "comment": "用户表"
+      },
+      {
+        "name": "roles",
+        "columns": [
+          {
+            "name": "id",
+            "dtype": "BIGINT",
+            "nullable": false,
+            "pk": true,
+            "fk": null,
+            "default": null,
+            "comment": "主键ID"
+          },
+          {
+            "name": "name",
+            "dtype": "VARCHAR(50)",
+            "nullable": false,
+            "pk": false,
+            "fk": null,
+            "default": null,
+            "comment": "角色名称"
+          },
+          {
+            "name": "code",
+            "dtype": "VARCHAR(50)",
+            "nullable": false,
+            "pk": false,
+            "fk": null,
+            "default": null,
+            "comment": "角色编码"
+          },
+          {
+            "name": "description",
+            "dtype": "VARCHAR(255)",
+            "nullable": true,
+            "pk": false,
+            "fk": null,
+            "default": null,
+            "comment": "角色描述"
+          },
+          {
+            "name": "created_at",
+            "dtype": "DATETIME",
+            "nullable": false,
+            "pk": false,
+            "fk": null,
+            "default": "CURRENT_TIMESTAMP",
+            "comment": "创建时间"
+          }
+        ],
+        "comment": "角色表"
+      },
+      {
+        "name": "user_roles",
+        "columns": [
+          {
+            "name": "id",
+            "dtype": "BIGINT",
+            "nullable": false,
+            "pk": true,
+            "fk": null,
+            "default": null,
+            "comment": "主键ID"
+          },
+          {
+            "name": "user_id",
+            "dtype": "BIGINT",
+            "nullable": false,
+            "pk": false,
+            "fk": "users.id",
+            "default": null,
+            "comment": "用户ID"
+          },
+          {
+            "name": "role_id",
+            "dtype": "BIGINT",
+            "nullable": false,
+            "pk": false,
+            "fk": "roles.id",
+            "default": null,
+            "comment": "角色ID"
+          }
+        ],
+        "comment": "用户角色关联表"
+      },
+      {
+        "name": "operation_logs",
+        "columns": [
+          {
+            "name": "id",
+            "dtype": "BIGINT",
+            "nullable": false,
+            "pk": true,
+            "fk": null,
+            "default": null,
+            "comment": "主键ID"
+          },
+          {
+            "name": "user_id",
+            "dtype": "BIGINT",
+            "nullable": false,
+            "pk": false,
+            "fk": "users.id",
+            "default": null,
+            "comment": "操作用户ID"
+          },
+          {
+            "name": "action",
+            "dtype": "VARCHAR(100)",
+            "nullable": false,
+            "pk": false,
+            "fk": null,
+            "default": null,
+            "comment": "操作类型"
+          },
+          {
+            "name": "target_type",
+            "dtype": "VARCHAR(50)",
+            "nullable": true,
+            "pk": false,
+            "fk": null,
+            "default": null,
+            "comment": "操作对象类型"
+          },
+          {
+            "name": "target_id",
+            "dtype": "VARCHAR(50)",
+            "nullable": true,
+            "pk": false,
+            "fk": null,
+            "default": null,
+            "comment": "操作对象ID"
+          },
+          {
+            "name": "detail",
+            "dtype": "TEXT",
+            "nullable": true,
+            "pk": false,
+            "fk": null,
+            "default": null,
+            "comment": "操作详情"
+          },
+          {
+            "name": "ip_address",
+            "dtype": "VARCHAR(45)",
+            "nullable": true,
+            "pk": false,
+            "fk": null,
+            "default": null,
+            "comment": "IP地址"
+          },
+          {
+            "name": "created_at",
+            "dtype": "DATETIME",
+            "nullable": false,
+            "pk": false,
+            "fk": null,
+            "default": "CURRENT_TIMESTAMP",
+            "comment": "创建时间"
+          }
+        ],
+        "comment": "操作日志表"
+      }
+    ],
+    "ddl_mysql": "-- MYSQL DDL generated by Waterfall Agent\nSET NAMES utf8mb4;\nSET FOREIGN_KEY_CHECKS = 0;\n\nCREATE TABLE IF NOT EXISTS `users` (\n  `id` BIGINT AUTO_INCREMENT NOT NULL COMMENT '主键ID',\n  `username` VARCHAR(50) NOT NULL COMMENT '用户名',\n  `password_hash` VARCHAR(255) NOT NULL COMMENT '密码哈希',\n  `email` VARCHAR(100) DEFAULT NULL COMMENT '邮箱',\n  `phone` VARCHAR(20) DEFAULT NULL COMMENT '手机号',\n  `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态: 1=启用, 0=禁用',\n  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',\n  `updated_at` DATETIME NOT NULL COMMENT '更新时间',\n  PRIMARY KEY (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';\n\nCREATE TABLE IF NOT EXISTS `roles` (\n  `id` BIGINT AUTO_INCREMENT NOT NULL COMMENT '主键ID',\n  `name` VARCHAR(50) NOT NULL COMMENT '角色名称',\n  `code` VARCHAR(50) NOT NULL COMMENT '角色编码',\n  `description` VARCHAR(255) DEFAULT NULL COMMENT '角色描述',\n  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',\n  PRIMARY KEY (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色表';\n\nCREATE TABLE IF NOT EXISTS `user_roles` (\n  `id` BIGINT AUTO_INCREMENT NOT NULL COMMENT '主键ID',\n  `user_id` BIGINT NOT NULL COMMENT '用户ID',\n  `role_id` BIGINT NOT NULL COMMENT '角色ID',\n  PRIMARY KEY (`id`),\n  CONSTRAINT fk_user_roles_user_id FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),\n  CONSTRAINT fk_user_roles_role_id FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户角色关联表';\n\nCREATE TABLE IF NOT EXISTS `operation_logs` (\n  `id` BIGINT AUTO_INCREMENT NOT NULL COMMENT '主键ID',\n  `user_id` BIGINT NOT NULL COMMENT '操作用户ID',\n  `action` VARCHAR(100) NOT NULL COMMENT '操作类型',\n  `target_type` VARCHAR(50) DEFAULT NULL COMMENT '操作对象类型',\n  `target_id` VARCHAR(50) DEFAULT NULL COMMENT '操作对象ID',\n  `detail` TEXT DEFAULT NULL COMMENT '操作详情',\n  `ip_address` VARCHAR(45) DEFAULT NULL COMMENT 'IP地址',\n  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',\n  PRIMARY KEY (`id`),\n  CONSTRAINT fk_operation_logs_user_id FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='操作日志表';\n\nSET FOREIGN_KEY_CHECKS = 1;",
+    "ddl_postgres": "-- POSTGRES DDL generated by Waterfall Agent\n\nCREATE TABLE IF NOT EXISTS `users` (\n  `id` BIGSERIAL NOT NULL,\n  `username` VARCHAR(50) NOT NULL,\n  `password_hash` VARCHAR(255) NOT NULL,\n  `email` VARCHAR(100) DEFAULT NULL,\n  `phone` VARCHAR(20) DEFAULT NULL,\n  `status` SMALLINT NOT NULL DEFAULT 1,\n  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` TIMESTAMP NOT NULL,\n  PRIMARY KEY (`id`)\n);\n\nCREATE TABLE IF NOT EXISTS `roles` (\n  `id` BIGSERIAL NOT NULL,\n  `name` VARCHAR(50) NOT NULL,\n  `code` VARCHAR(50) NOT NULL,\n  `description` VARCHAR(255) DEFAULT NULL,\n  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`)\n);\n\nCREATE TABLE IF NOT EXISTS `user_roles` (\n  `id` BIGSERIAL NOT NULL,\n  `user_id` BIGSERIAL NOT NULL,\n  `role_id` BIGSERIAL NOT NULL,\n  PRIMARY KEY (`id`),\n  CONSTRAINT fk_user_roles_user_id FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),\n  CONSTRAINT fk_user_roles_role_id FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`)\n);\n\nCREATE TABLE IF NOT EXISTS `operation_logs` (\n  `id` BIGSERIAL NOT NULL,\n  `user_id` BIGSERIAL NOT NULL,\n  `action` VARCHAR(100) NOT NULL,\n  `target_type` VARCHAR(50) DEFAULT NULL,\n  `target_id` VARCHAR(50) DEFAULT NULL,\n  `detail` TEXT DEFAULT NULL,\n  `ip_address` VARCHAR(45) DEFAULT NULL,\n  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  CONSTRAINT fk_operation_logs_user_id FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)\n);\n",
+    "ddl_sqlite": "-- SQLITE DDL generated by Waterfall Agent\n\nCREATE TABLE IF NOT EXISTS `users` (\n  `id` INTEGER NOT NULL,\n  `username` TEXT NOT NULL,\n  `password_hash` TEXT NOT NULL,\n  `email` TEXT DEFAULT NULL,\n  `phone` TEXT DEFAULT NULL,\n  `status` INTEGER NOT NULL DEFAULT 1,\n  `created_at` TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` TEXT NOT NULL,\n  PRIMARY KEY (`id`)\n);\n\nCREATE TABLE IF NOT EXISTS `roles` (\n  `id` INTEGER NOT NULL,\n  `name` TEXT NOT NULL,\n  `code` TEXT NOT NULL,\n  `description` TEXT DEFAULT NULL,\n  `created_at` TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`)\n);\n\nCREATE TABLE IF NOT EXISTS `user_roles` (\n  `id` INTEGER NOT NULL,\n  `user_id` INTEGER NOT NULL,\n  `role_id` INTEGER NOT NULL,\n  PRIMARY KEY (`id`),\n  CONSTRAINT fk_user_roles_user_id FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),\n  CONSTRAINT fk_user_roles_role_id FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`)\n);\n\nCREATE TABLE IF NOT EXISTS `operation_logs` (\n  `id` INTEGER NOT NULL,\n  `user_id` INTEGER NOT NULL,\n  `action` TEXT NOT NULL,\n  `target_type` TEXT DEFAULT NULL,\n  `target_id` TEXT DEFAULT NULL,\n  `detail` TEXT DEFAULT NULL,\n  `ip_address` VARCHAR(45) DEFAULT NULL,\n  `created_at` TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  CONSTRAINT fk_operation_logs_user_id FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)\n);\n",
+    "plantuml_er": "@startuml\n!theme plain\nskinparam backgroundColor #FEFEFE\n\nentity \"users\" as users {\n  * id : BIGINT [PK]\n  * username : VARCHAR(50)\n  * password_hash : VARCHAR(255)\n  * email : VARCHAR(100)\n  * phone : VARCHAR(20)\n  * status : TINYINT\n  * created_at : DATETIME\n  * updated_at : DATETIME\n}\n\nentity \"roles\" as roles {\n  * id : BIGINT [PK]\n  * name : VARCHAR(50)\n  * code : VARCHAR(50)\n  * description : VARCHAR(255)\n  * created_at : DATETIME\n}\n\nentity \"user_roles\" as user_roles {\n  * id : BIGINT [PK]\n  * user_id : BIGINT [FK: users.id]\n  * role_id : BIGINT [FK: roles.id]\n}\n\nentity \"operation_logs\" as operation_logs {\n  * id : BIGINT [PK]\n  * user_id : BIGINT [FK: users.id]\n  * action : VARCHAR(100)\n  * target_type : VARCHAR(50)\n  * target_id : VARCHAR(50)\n  * detail : TEXT\n  * ip_address : VARCHAR(45)\n  * created_at : DATETIME\n}\n\nuser_roles}|--||users\nuser_roles}|--||roles\noperation_logs}|--||users\n@enduml",
+    "version": "1.0",
+    "status": "draft",
+    "uc_links": {}
+  },
+  "interface": {
+    "endpoints": [],
+    "openapi_spec": "",
+    "uc_to_ep_map": {},
+    "req_to_ep_map": {},
+    "version": "1.0",
+    "status": "draft"
+  },
+  "sequence": {
+    "sequences": [],
+    "plantuml_code": "",
+    "version": "1.0",
+    "status": "draft"
+  },
+  "prototype": {
+    "pages": [],
+    "html_prototypes": "",
+    "version": "1.0",
+    "status": "draft"
+  },
+  "code": {
+    "backend_files": [],
+    "frontend_files": [],
+    "ep_to_code_map": {},
+    "version": "1.0",
+    "status": "draft"
+  },
+  "test": {
+    "test_cases": [],
+    "test_code": "",
+    "coverage_map": {},
+    "version": "1.0",
+    "status": "draft"
+  },
+  "phase_status": {
+    "requirements": "approved",
+    "domain_model": "approved",
+    "database": "pending_review",
+    "interface": "pending",
+    "sequence": "pending",
+    "prototype": "pending",
+    "code": "pending",
+    "test": "pending"
+  },
+  "trace_count": 0
+}

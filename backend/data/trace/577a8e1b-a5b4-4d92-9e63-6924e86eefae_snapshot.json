@@ -1,0 +1,99 @@
+{
+  "project_id": "577a8e1b-a5b4-4d92-9e63-6924e86eefae",
+  "project_name": "My Project",
+  "created_at": "2026-06-15T07:18:56.010861",
+  "updated_at": "2026-06-15T07:18:56.010861",
+  "requirements": {
+    "raw_input": "",
+    "vocab_gaps": [
+      "user_role",
+      "auth",
+      "error_handling",
+      "validation",
+      "data_persistence",
+      "pagination",
+      "search",
+      "notification",
+      "audit",
+      "permission",
+      "concurrency",
+      "performance",
+      "i18n"
+    ],
+    "items": [
+      {
+        "req_id": "REQ-001",
+        "title": "",
+        "description": "",
+        "priority": "medium",
+        "category": "functional",
+        "status": "draft",
+        "gap_notes": null
+      }
+    ],
+    "version": "1.0",
+    "status": "approved"
+  },
+  "domain_model": {
+    "actors": [],
+    "use_cases": [],
+    "plantuml_code": "",
+    "version": "1.0",
+    "status": "draft"
+  },
+  "database": {
+    "tables": [],
+    "ddl_mysql": "",
+    "ddl_postgres": "",
+    "ddl_sqlite": "",
+    "plantuml_er": "",
+    "version": "1.0",
+    "status": "draft",
+    "uc_links": {}
+  },
+  "interface": {
+    "endpoints": [],
+    "openapi_spec": "",
+    "uc_to_ep_map": {},
+    "req_to_ep_map": {},
+    "version": "1.0",
+    "status": "draft"
+  },
+  "sequence": {
+    "sequences": [],
+    "plantuml_code": "",
+    "version": "1.0",
+    "status": "draft"
+  },
+  "prototype": {
+    "pages": [],
+    "html_prototypes": "",
+    "version": "1.0",
+    "status": "draft"
+  },
+  "code": {
+    "backend_files": [],
+    "frontend_files": [],
+    "ep_to_code_map": {},
+    "version": "1.0",
+    "status": "draft"
+  },
+  "test": {
+    "test_cases": [],
+    "test_code": "",
+    "coverage_map": {},
+    "version": "1.0",
+    "status": "draft"
+  },
+  "phase_status": {
+    "requirements": "approved",
+    "domain_model": "pending",
+    "database": "pending",
+    "interface": "pending",
+    "sequence": "pending",
+    "prototype": "pending",
+    "code": "pending",
+    "test": "pending"
+  },
+  "trace_count": 0
+}

@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Waterfall SDLC Agent</title>
+<style>
+:root {
+  --blue-50: #eff6ff; --blue-100: #dbeafe; --blue-200: #bfdbfe; --blue-500: #3b82f6;
+  --blue-600: #2563eb; --blue-700: #1d4ed8; --blue-800: #1e40af;
+  --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb; --gray-300: #d1d5db;
+  --gray-400: #9ca3af; --gray-500: #6b7280; --gray-600: #4b5563; --gray-700: #374151;
+  --gray-800: #1f2937; --gray-900: #111827;
+  --green-500: #22c55e; --green-600: #16a34a; --green-700: #15803d;
+  --red-500: #ef4444; --red-600: #dc2626; --red-700: #b91c1c;
+  --yellow-500: #eab308; --yellow-600: #ca8a04;
+  --sidebar-w: 260px; --navbar-h: 0px; --trace-h: 200px;
+}
+*, ::before, ::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif; background: var(--gray-50); color: var(--gray-800); font-size: 14px; line-height: 1.5; }
+button { cursor: pointer; font-family: inherit; font-size: inherit; border: none; background: none; }
+input, textarea, select { font-family: inherit; font-size: inherit; }
+a { color: var(--blue-600); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Layout */
+.app-layout { display: flex; height: 100vh; overflow: hidden; }
+
+/* Sidebar */
+.sidebar { width: var(--sidebar-w); min-width: var(--sidebar-w); background: var(--gray-900); color: #fff; display: flex; flex-direction: column; }
+.sidebar-header { padding: 16px 20px; border-bottom: 1px solid var(--gray-700); }
+.sidebar-header h1 { font-size: 16px; font-weight: 700; letter-spacing: .5px; }
+.sidebar-header p { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+.sidebar-actions { padding: 12px 16px; }
+.btn-primary { display: flex; align-items: center; gap: 6px; width: 100%; padding: 8px 12px; background: var(--blue-600); color: #fff; border-radius: 6px; font-size: 13px; font-weight: 600; transition: background .15s; }
+.btn-primary:hover { background: var(--blue-700); }
+.project-list { flex: 1; overflow-y: auto; padding: 8px 0; }
+.project-item { padding: 10px 20px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: background .15s; border-left: 3px solid transparent; }
+.project-item:hover { background: rgba(255,255,255,.06); }
+.project-item.active { background: rgba(59,130,246,.15); border-left-color: var(--blue-500); }
+.project-item .pj-icon { width: 32px; height: 32px; border-radius: 8px; background: var(--blue-500); display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+.project-item .pj-info { flex: 1; min-width: 0; }
+.project-item .pj-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.project-item .pj-meta { font-size: 11px; color: var(--gray-400); margin-top: 1px; }
+
+/* Main */
+.main-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* Phase Stepper */
+.phase-stepper { display: flex; align-items: stretch; background: #fff; border-bottom: 1px solid var(--gray-200); padding: 0 16px; overflow-x: auto; }
+.phase-step { display: flex; align-items: center; gap: 8px; padding: 10px 14px; cursor: pointer; position: relative; white-space: nowrap; transition: background .15s; border-bottom: 3px solid transparent; flex-shrink: 0; }
+.phase-step:hover { background: var(--blue-50); }
+.phase-step.active { border-bottom-color: var(--blue-500); background: var(--blue-50); }
+.phase-step.pending { opacity: .5; }
+.phase-step.locked { opacity: .4; cursor: not-allowed; }
+.phase-step .ps-indicator { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+.phase-step .ps-indicator.draft { background: var(--gray-200); color: var(--gray-500); }
+.phase-step .ps-indicator.pending_review { background: var(--yellow-500); color: #fff; }
+.phase-step .ps-indicator.approved { background: var(--green-500); color: #fff; }
+.phase-step .ps-indicator.rejected { background: var(--red-500); color: #fff; }
+.phase-step .ps-indicator.pending { background: var(--gray-300); color: var(--gray-500); }
+.phase-step .ps-label { font-size: 12px; font-weight: 500; }
+.phase-step .ps-status { font-size: 10px; color: var(--gray-500); }
+.phase-step .lock-icon { font-size: 12px; color: var(--gray-400); margin-left: 2px; }
+
+/* Content */
+.content-wrapper { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+.content-area { flex: 1; }
+.phase-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+.phase-desc { color: var(--gray-500); margin-bottom: 20px; font-size: 13px; }
+
+/* Cards */
+.card { background: #fff; border-radius: 10px; border: 1px solid var(--gray-200); padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+.card-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.card-actions { display: flex; gap: 8px; margin-left: auto; }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; gap: 5px; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all .15s; }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+.btn-approve { background: var(--green-600); color: #fff; }
+.btn-approve:hover { background: var(--green-700); }
+.btn-reject { background: var(--red-500); color: #fff; }
+.btn-reject:hover { background: var(--red-600); }
+.btn-rollback { background: var(--yellow-500); color: #fff; }
+.btn-rollback:hover { background: var(--yellow-600); }
+.btn-outline { border: 1px solid var(--gray-300); color: var(--gray-700); background: #fff; }
+.btn-outline:hover { background: var(--gray-100); }
+.btn-blue { background: var(--blue-500); color: #fff; }
+.btn-blue:hover { background: var(--blue-600); }
+.btn-ghost { color: var(--gray-500); }
+.btn-ghost:hover { color: var(--gray-700); background: var(--gray-100); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Badges */
+.badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+.badge-green { background: #dcfce7; color: #166534; }
+.badge-yellow { background: #fef9c3; color: #854d0e; }
+.badge-red { background: #fee2e2; color: #991b1b; }
+.badge-blue { background: var(--blue-100); color: var(--blue-800); }
+.badge-gray { background: var(--gray-100); color: var(--gray-600); }
+.badge-purple { background: #f3e8ff; color: #6b21a8; }
+.badge-orange { background: #ffedd5; color: #9a3412; }
+.badge-cyan { background: #cffafe; color: #155e75; }
+
+/* Tables */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--gray-200); }
+th { background: var(--gray-50); font-weight: 600; font-size: 12px; color: var(--gray-600); text-transform: uppercase; letter-spacing: .5px; }
+tr:hover td { background: var(--gray-50); }
+
+/* Forms */
+textarea, input[type="text"], select { width: 100%; padding: 8px 12px; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 13px; transition: border-color .15s; }
+textarea:focus, input:focus, select:focus { outline: none; border-color: var(--blue-500); box-shadow: 0 0 0 3px rgba(59,130,246,.12); }
+textarea { resize: vertical; min-height: 80px; }
+
+/* Code */
+.code-block { background: #1e293b; color: #e2e8f0; border-radius: 8px; padding: 16px; font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; white-space: pre; position: relative; }
+.code-block .copy-btn { position: absolute; top: 8px; right: 8px; padding: 4px 10px; background: rgba(255,255,255,.1); color: #fff; border-radius: 4px; font-size: 11px; cursor: pointer; }
+.code-block .copy-btn:hover { background: rgba(255,255,255,.2); }
+.code-block .kw { color: #c084fc; }
+.code-block .str { color: #86efac; }
+.code-block .cm { color: #64748b; }
+.code-block .fn { color: #60a5fa; }
+.code-block .num { color: #fbbf24; }
+.code-block .tp { color: #67e8f9; }
+.code-block .op { color: #f472b6; }
+
+/* Modal */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 1000; display: none; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: #fff; border-radius: 12px; width: 90%; max-width: 700px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,.15); }
+.modal-header { padding: 16px 20px; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: space-between; }
+.modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+.modal-footer { padding: 12px 20px; border-top: 1px solid var(--gray-200); display: flex; gap: 8px; justify-content: flex-end; }
+.modal-title { font-size: 16px; font-weight: 600; }
+
+/* Tabs */
+.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--gray-200); margin-bottom: 12px; }
+.tab { padding: 8px 16px; font-size: 13px; font-weight: 500; color: var(--gray-500); border-bottom: 2px solid transparent; cursor: pointer; transition: all .15s; }
+.tab:hover { color: var(--gray-700); }
+.tab.active { color: var(--blue-600); border-bottom-color: var(--blue-600); }
+
+/* Grid helpers */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.flex-c { display: flex; flex-direction: column; gap: 8px; }
+.flex-r { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.flex-1 { flex: 1; }
+.mt-8 { margin-top: 8px; }
+.mt-12 { margin-top: 12px; }
+.mb-12 { margin-bottom: 12px; }
+.gap-6 { gap: 6px; }
+
+/* Stepper in form */
+.stepper-ctrl { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.stepper-ctrl button { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--gray-300); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.stepper-ctrl button:hover { border-color: var(--blue-500); color: var(--blue-600); }
+.stepper-ctrl span { font-size: 13px; font-weight: 600; min-width: 40px; text-align: center; }
+
+/* File tree */
+.file-tree { font-family: 'Consolas', monospace; font-size: 13px; }
+.file-tree .ft-item { display: flex; align-items: center; gap: 6px; padding: 4px 8px; cursor: pointer; border-radius: 4px; }
+.file-tree .ft-item:hover { background: var(--gray-100); }
+.file-tree .ft-item.active { background: var(--blue-100); color: var(--blue-800); }
+.file-tree .ft-folder { font-weight: 600; color: var(--gray-700); }
+.file-tree .ft-file { color: var(--gray-600); margin-left: 20px; }
+
+/* Trace panel */
+.trace-panel { background: #fff; border-top: 1px solid var(--gray-200); max-height: var(--trace-h); overflow: hidden; transition: max-height .3s; }
+.trace-panel.collapsed { max-height: 36px; }
+.trace-header { padding: 8px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
+.trace-header:hover { background: var(--gray-50); }
+.trace-body { padding: 8px 16px 16px; overflow-y: auto; max-height: calc(var(--trace-h) - 36px); }
+.trace-item { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; font-size: 12px; border-bottom: 1px solid var(--gray-100); }
+.trace-item:last-child { border-bottom: none; }
+.trace-item .ti-time { color: var(--gray-400); white-space: nowrap; min-width: 140px; }
+.trace-item .ti-badge { flex-shrink: 0; }
+
+/* Review bar */
+.review-bar { background: var(--blue-50); border: 1px solid var(--blue-200); border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.review-bar label { font-size: 12px; font-weight: 600; color: var(--blue-800); }
+
+/* Loading / Error */
+.loading { display: flex; align-items: center; justify-content: center; padding: 40px; color: var(--gray-400); gap: 8px; }
+.spinner { width: 20px; height: 20px; border: 3px solid var(--gray-200); border-top-color: var(--blue-500); border-radius: 50%; animation: spin .6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.error-msg { padding: 12px 16px; background: #fee2e2; color: var(--red-700); border-radius: 6px; font-size: 13px; }
+
+/* Empty state */
+.empty-state { text-align: center; padding: 40px 20px; color: var(--gray-400); }
+.empty-state .empty-icon { font-size: 40px; margin-bottom: 8px; }
+.plantuml-img { margin-bottom: 12px; overflow-x: auto; }
+.plantuml-img img { max-width: 100%; border: 1px solid var(--gray-200); border-radius: 6px; background: #fff; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .app-layout { flex-direction: column; }
+  .sidebar { width: 100%; min-width: auto; max-height: 200px; }
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .content-wrapper { padding: 12px; }
+  .phase-step { padding: 8px 10px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app-layout" id="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h1>Waterfall Agent</h1>
+      <p>SDLC Phase Manager</p>
+    </div>
+    <div class="sidebar-actions">
+      <button class="btn-primary" onclick="createProject()">
+        <span>+</span> New Project
+      </button>
+    </div>
+    <div class="project-list" id="projectList"></div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main-area">
+    <!-- Phase Stepper -->
+    <div class="phase-stepper" id="phaseStepper"></div>
+
+    <!-- Content -->
+    <div class="content-wrapper">
+      <!-- Review bar -->
+      <div id="reviewBar" style="display:none;"></div>
+
+      <!-- Main content -->
+      <div class="content-area" id="contentArea">
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <div>Select a project to get started</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trace panel -->
+    <div class="trace-panel collapsed" id="tracePanel">
+      <div class="trace-header" onclick="toggleTrace()">
+        <span id="traceArrow">▶</span>
+        <strong style="font-size:13px;">Audit Log</strong>
+        <select id="traceFilter" onchange="loadTrace()" style="width:auto;padding:2px 8px;font-size:12px;margin-left:auto;">
+          <option value="">All phases</option>
+          <option value="requirements">requirements</option>
+          <option value="domain_model">domain_model</option>
+          <option value="database">database</option>
+          <option value="interface">interface</option>
+          <option value="sequence">sequence</option>
+          <option value="prototype">prototype</option>
+          <option value="code">code</option>
+          <option value="test">test</option>
+        </select>
+      </div>
+      <div class="trace-body" id="traceBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Title</div>
+      <button onclick="closeModal()" style="font-size:20px;color:var(--gray-400);">&times;</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+<script>
+// ----- Config -----
+const API = ''; // same-origin, or set to backend URL
+
+// ----- State -----
+const state = {
+  projects: [],
+  projectId: null,
+  phase: 'requirements',
+  phases: null,
+  phaseArtifact: null,
+  traceData: [],
+  traceOpen: false,
+};
+
+const PHASE_LIST = [
+  { id: 'requirements', label: '需求分析', short: 'Req' },
+  { id: 'domain_model', label: '领域模型', short: 'Domain' },
+  { id: 'database', label: '数据库设计', short: 'DB' },
+  { id: 'interface', label: '接口设计', short: 'API' },
+  { id: 'sequence', label: '时序图', short: 'Seq' },
+  { id: 'prototype', label: '页面原型', short: 'UI' },
+  { id: 'code', label: '代码生成', short: 'Code' },
+  { id: 'test', label: '测试用例', short: 'Test' },
+];
+
+const PHASE_ORDER = PHASE_LIST.map(p => p.id);
+
+// ----- PlantUML encoder -----
+function encodePlantUML(text) {
+  const data = new TextEncoder().encode(text);
+  const compressed = pako.deflateRaw(data, { level: 9 });
+  const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_';
+  let result = '';
+  for (let i = 0; i < compressed.length; i += 3) {
+    const b1 = compressed[i] & 0xFF;
+    const b2 = (i + 1 < compressed.length) ? compressed[i + 1] & 0xFF : 0;
+    const b3 = (i + 2 < compressed.length) ? compressed[i + 2] & 0xFF : 0;
+    result += chars[b1 >> 2];
+    result += chars[((b1 & 0x3) << 4) | (b2 >> 4)];
+    result += chars[((b2 & 0xF) << 2) | (b3 >> 6)];
+    result += chars[b3 & 0x3F];
+  }
+  return result;
+}
+function plantumlImg(code) {
+  if (!code) return '';
+  try {
+    const encoded = encodePlantUML(code);
+    return '<div class="plantuml-img"><img src="https://www.plantuml.com/plantuml/img/' + encoded + '" alt="PlantUML diagram" onerror="this.parentElement.innerHTML=\'<span style=color:var(--red-500);font-size:12px;>Render failed</span>\'" loading="lazy" /></div>';
+  } catch(e) {
+    return '<div style="color:var(--red-500);font-size:12px;">Render error: ' + e.message + '</div>';
+  }
+}
+
+// ----- API helpers -----
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body !== undefined) opts.body = JSON.stringify(body);
+  const res = await fetch(API + path, opts);
+  if (!res.ok) {
+    let msg = res.statusText;
+    try { const j = await res.json(); msg = j.detail || msg; } catch(e) {}
+    throw new Error(msg);
+  }
+  return res.json();
+}
+
+function apiGet(path) { return api('GET', path); }
+function apiPost(path, body) { return api('POST', path, body); }
+
+// ----- Utilities -----
+function $(id) { return document.getElementById(id); }
+
+function h(tag, attrs, ...children) {
+  const el = document.createElement(tag);
+  if (attrs) for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  for (const c of children) el.append(typeof c === 'string' ? document.createTextNode(c) : c);
+  return el;
+}
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function statusBadge(status) {
+  const map = {
+    approved: ['badge-green', '✓ Approved'],
+    pending_review: ['badge-yellow', '⏳ Review'],
+    rejected: ['badge-red', '✗ Rejected'],
+    draft: ['badge-blue', 'Draft'],
+    pending: ['badge-gray', 'Pending'],
+  };
+  const [cls, label] = map[status] || ['badge-gray', status];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+function phaseIndicator(status) {
+  const cls = status || 'pending';
+  const map = { approved:'✓', pending_review:'?', rejected:'✗', draft:'●', pending:'○' };
+  return map[cls] || '○';
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ----- Project Management -----
+async function loadProjects() {
+  try {
+    const resp = await apiGet('/api/projects');
+    state.projects = resp.projects || [];
+  } catch(e) {
+    state.projects = [];
+  }
+  renderProjectList();
+}
+
+function renderProjectList() {
+  const el = $('projectList');
+  const list = state.projects || [];
+  if (!list.length) {
+    el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--gray-500);font-size:12px;">No projects yet</div>';
+    return;
+  }
+  el.innerHTML = list.map(p => {
+    const pid = p.project_id || p.id || '';
+    const active = pid === state.projectId ? 'active' : '';
+    return `<div class="project-item ${active}" data-pid="${pid}" onclick="selectProject('${pid}')">
+      <div class="pj-icon">📁</div>
+      <div class="pj-info">
+        <div class="pj-name">${escapeHtml(p.project_name || 'Unnamed')}</div>
+        <div class="pj-meta">ID: ${pid.substring(0, 8)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function selectProject(id) {
+  if (state.projectId === id) return;
+  state.projectId = id;
+  state.phase = 'requirements';
+  renderProjectList();
+  await loadAll();
+}
+
+async function createProject() {
+  const name = prompt('Enter project name:');
+  if (!name || !name.trim()) return;
+  try {
+    const p = await apiPost('/api/projects', { project_name: name.trim() });
+    await loadProjects();
+    await selectProject(p.project_id);
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+// ----- Phase Loading -----
+async function loadAll() {
+  if (!state.projectId) return;
+  try {
+    const resp = await apiGet(`/api/projects/${state.projectId}/phases`);
+    state.phases = resp.phase_map || {};
+    state.phaseList = resp.phases || [];
+  } catch(e) {
+    state.phases = {};
+    state.phaseList = [];
+  }
+  renderStepper();
+  await loadPhaseView();
+  await loadTrace();
+}
+
+async function loadPhaseView() {
+  if (!state.projectId) return;
+  $('contentArea').innerHTML = '<div class="loading"><div class="spinner"></div>Loading...</div>';
+  try {
+    state.phaseArtifact = await apiGet(`/api/projects/${state.projectId}/phases/${state.phase}/artifact`);
+  } catch(e) {
+    state.phaseArtifact = null;
+  }
+  renderReviewBar();
+  renderPhaseContent();
+}
+
+// ----- Stepper -----
+function renderStepper() {
+  const el = $('phaseStepper');
+  el.innerHTML = PHASE_LIST.map((p, i) => {
+    const status = state.phases && state.phases[p.id] ? state.phases[p.id].status || 'pending' : 'pending';
+    const locked = i > 0 && (!state.phases || !state.phases[PHASE_ORDER[i-1]] || state.phases[PHASE_ORDER[i-1]].status !== 'approved');
+    const isActive = p.id === state.phase;
+    const isLocked = locked && status === 'pending';
+    const classes = ['phase-step', isActive ? 'active' : '', isLocked ? 'locked' : ''].join(' ');
+    const indicator = isLocked ? '🔒' : phaseIndicator(status);
+    const indClass = isLocked ? 'pending' : status;
+    const statusLabel = isLocked ? 'locked' : status.replace('_', ' ');
+    const clickHandler = isLocked ? '' : `switchPhase('${p.id}')`;
+    return `<div class="${classes}" ${clickHandler ? `onclick="${clickHandler}"` : ''}>
+      <div class="ps-indicator ${indClass}">${indicator}</div>
+      <div>
+        <div class="ps-label">${p.label}</div>
+        <div class="ps-status">${statusLabel}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function switchPhase(phase) {
+  if (state.phase === phase) return;
+  state.phase = phase;
+  renderStepper();
+  loadPhaseView();
+}
+
+// ----- Review Bar -----
+function renderReviewBar() {
+  const el = $('reviewBar');
+  const status = state.phases && state.phases[state.phase] ? state.phases[state.phase].status : 'pending';
+  if (status === 'pending_review') {
+    el.style.display = 'flex';
+    el.innerHTML = `
+      <strong>Pending Review</strong>
+      <div style="flex:1;"></div>
+      <button class="btn btn-approve btn-sm" onclick="doApprove()">✓ Approve</button>
+      <button class="btn btn-reject btn-sm" onclick="doReject()">✗ Reject</button>
+      <button class="btn btn-outline btn-sm" onclick="editArtifact()">Edit Artifact</button>
+    `;
+  } else if (status === 'approved' || status === 'rejected' || status === 'draft') {
+    el.style.display = 'flex';
+    el.innerHTML = `
+      ${statusBadge(status)}
+      <div style="flex:1;"></div>
+      ${status === 'rejected' ? '<span style="font-size:12px;color:var(--gray-500);">' + escapeHtml((state.phases[state.phase].feedback || '')) + '</span>' : ''}
+      <button class="btn btn-rollback btn-sm" onclick="doRollback()">↺ Rollback</button>
+      <button class="btn btn-outline btn-sm" onclick="editArtifact()">Edit Artifact</button>
+    `;
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+// ----- Phase Content Rendering -----
+function renderPhaseContent() {
+  const el = $('contentArea');
+  const p = PHASE_LIST.find(x => x.id === state.phase);
+  const status = state.phases && state.phases[state.phase] ? state.phases[state.phase].status : 'pending';
+
+  // Show execute button if pending
+  let execBtn = '';
+  if (status === 'pending' || status === 'draft') {
+    execBtn = `<button class="btn btn-blue" onclick="executePhase()">▶ Execute Phase</button>`;
+  }
+
+  const artifact = state.phaseArtifact || {};
+
+  switch (state.phase) {
+    case 'requirements': renderRequirements(el, artifact, execBtn); break;
+    case 'domain_model': renderDomainModel(el, artifact, execBtn); break;
+    case 'database': renderDatabase(el, artifact, execBtn); break;
+    case 'interface': renderInterface(el, artifact, execBtn); break;
+    case 'sequence': renderSequence(el, artifact, execBtn); break;
+    case 'prototype': renderPrototype(el, artifact, execBtn); break;
+    case 'code': renderCode(el, artifact, execBtn); break;
+    case 'test': renderTest(el, artifact, execBtn); break;
+    default: el.innerHTML = '<div class="empty-state"><div>Unknown phase</div></div>';
+  }
+}
+
+// ---- Phase: Requirements ----
+function renderRequirements(el, artifact, execBtn) {
+  const rawInput = artifact.raw_input || '';
+  const items = artifact.items || [];
+  const gaps = artifact.vocab_gaps || [];
+  el.innerHTML = `
+    <div class="phase-title">📋 Requirements Analysis</div>
+    <div class="phase-desc">Input raw requirements, detect gaps, and structure into formal items</div>
+
+    <div class="card">
+      <div class="card-title">Raw Input</div>
+      <textarea id="reqInput" rows="5" placeholder="Paste raw requirements here...">${escapeHtml(rawInput)}</textarea>
+      <button class="btn btn-blue mt-12" onclick="analyzeRequirements()">🔍 Analyze</button>
+    </div>
+
+    ${gaps.length ? `<div class="card">
+      <div class="card-title">⚠️ Vocabulary Gaps</div>
+      <div class="flex-r">${gaps.map(g => `<span class="badge badge-red">${escapeHtml(g)}</span>`).join('')}</div>
+    </div>` : ''}
+
+    <div class="card">
+      <div class="card-title">Structured Requirements</div>
+      ${execBtn}
+      ${items.length ? `<div class="table-wrap mt-12"><table>
+        <thead><tr><th>ID</th><th>Title</th><th>Priority</th><th>Category</th><th></th></tr></thead>
+        <tbody>${items.map((it, i) => `
+          <tr>
+            <td><input type="text" value="${escapeHtml(it.req_id || 'REQ-' + (i+1))}" data-idx="${i}" data-field="req_id" class="req-edit" style="width:80px;"></td>
+            <td><input type="text" value="${escapeHtml(it.title || '')}" data-idx="${i}" data-field="title" class="req-edit" style="width:200px;"></td>
+            <td><select data-idx="${i}" data-field="priority" class="req-edit">
+              <option ${it.priority==='high'?'selected':''}>high</option>
+              <option ${it.priority==='medium'?'selected':''}>medium</option>
+              <option ${it.priority==='low'?'selected':''}>low</option>
+            </select></td>
+            <td><input type="text" value="${escapeHtml(it.category || '')}" data-idx="${i}" data-field="category" class="req-edit" style="width:120px;"></td>
+            <td><button class="btn btn-ghost btn-sm" onclick="saveRequirements()">💾</button></td>
+          </tr>`).join('')}</tbody></table></div>` : '<div class="empty-state mt-12"><div>No requirements yet. Click Analyze above.</div></div>'}
+    </div>`;
+}
+
+async function analyzeRequirements() {
+  const raw = $('reqInput').value.trim();
+  if (!raw) return alert('Please enter raw requirements.');
+  const btn = document.querySelector('#reqInput + .btn');
+  if (btn) btn.disabled = true;
+  try {
+    const res = await apiPost(`/api/projects/${state.projectId}/requirements/analyze`, { raw_input: raw });
+    state.phaseArtifact = res;
+    await saveArtifactSilent(res);
+    renderPhaseContent();
+  } catch(e) {
+    alert('Analysis error: ' + e.message);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function saveRequirements() {
+  const edits = document.querySelectorAll('.req-edit');
+  const items = (state.phaseArtifact && state.phaseArtifact.items) || [];
+  const grouped = {};
+  edits.forEach(el => {
+    const idx = parseInt(el.dataset.idx);
+    const field = el.dataset.field;
+    if (!grouped[idx]) grouped[idx] = { ...(items[idx] || {}) };
+    grouped[idx][field] = el.value;
+  });
+  Object.values(grouped).forEach((v, i) => { items[i] = v; });
+  state.phaseArtifact.items = items;
+  saveArtifactSilent(state.phaseArtifact);
+}
+
+// ---- Phase: Domain Model ----
+function renderDomainModel(el, artifact, execBtn) {
+  const actors = artifact.actors || [];
+  const useCases = artifact.use_cases || [];
+  const plantUml = artifact.plantuml_code || '';
+  el.innerHTML = `
+    <div class="phase-title">🏛️ Domain Model</div>
+    <div class="phase-desc">Actors, use cases, and PlantUML diagram</div>
+    ${execBtn}
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Actors</div>
+        ${actors.length ? actors.map(a => `
+          <div style="padding:8px 12px;border:1px solid var(--gray-200);border-radius:6px;margin-bottom:6px;">
+            <strong>${escapeHtml(a.name || a)}</strong>
+            ${a.description ? `<div style="font-size:12px;color:var(--gray-500);">${escapeHtml(a.description)}</div>` : ''}
+          </div>`).join('') : '<div class="empty-state"><div>No actors</div></div>'}
+      </div>
+      <div class="card">
+        <div class="card-title">Use Cases</div>
+        ${useCases.length ? useCases.map(uc => `
+          <div style="padding:8px 12px;border:1px solid var(--gray-200);border-radius:6px;margin-bottom:6px;cursor:pointer;" onclick="this.querySelector('.uc-detail').style.display=this.querySelector('.uc-detail').style.display==='none'?'block':'none'">
+            <strong>${escapeHtml(uc.name || uc.uc_id || '')}</strong>
+            <span class="badge badge-blue">${escapeHtml((uc.actors || []).join(', '))}</span>
+            <div class="uc-detail" style="display:none;margin-top:8px;font-size:12px;color:var(--gray-600);">
+              ${uc.preconditions ? `<div><strong>Pre:</strong> ${escapeHtml(Array.isArray(uc.preconditions) ? uc.preconditions.join(', ') : uc.preconditions)}</div>` : ''}
+              ${uc.main_flow ? `<div><strong>Main:</strong> ${escapeHtml(Array.isArray(uc.main_flow) ? uc.main_flow.join(' → ') : uc.main_flow)}</div>` : ''}
+              ${uc.alt_flows ? `<div><strong>Alt:</strong> ${escapeHtml(Array.isArray(uc.alt_flows) ? uc.alt_flows.map(f => Array.isArray(f) ? f.join('; ') : f).join(' | ') : uc.alt_flows)}</div>` : ''}
+            </div>
+          </div>`).join('') : '<div class="empty-state"><div>No use cases</div></div>'}
+      </div>
+    </div>
+
+    ${plantUml ? `<div class="card">
+      <div class="card-title">PlantUML Diagram</div>
+      ${plantumlImg(plantUml)}
+      ${codeBlock(plantUml, 'plantuml')}
+    </div>` : ''}`;
+}
+// ---- Phase: Database ----
+let dbTab = 'mysql';
+function renderDatabase(el, artifact, execBtn) {
+  const tables = artifact.tables || [];
+  const er = artifact.plantuml_er || '';
+
+  function getDDL(dialect) {
+    if (dialect === 'mysql') return artifact.ddl_mysql || '';
+    if (dialect === 'postgresql') return artifact.ddl_postgres || '';
+    if (dialect === 'sqlite') return artifact.ddl_sqlite || '';
+    return '';
+  }
+  el.innerHTML = `
+    <div class="phase-title">🗄️ Database Design</div>
+    <div class="phase-desc">Table definitions, multi-dialect DDL, ER diagram</div>
+    ${execBtn}
+
+    <div class="card">
+      <div class="card-title">Tables (${tables.length})</div>
+      ${tables.length ? tables.map(t => `
+        <div style="border:1px solid var(--gray-200);border-radius:6px;margin-bottom:8px;">
+          <div style="padding:8px 12px;background:var(--gray-50);font-weight:600;border-bottom:1px solid var(--gray-200);">${escapeHtml(t.name || t.table_name || '')}</div>
+          <div class="table-wrap"><table><thead><tr><th>Column</th><th>Type</th><th>PK</th><th>FK</th><th>Null</th><th>Default</th></tr></thead>
+          <tbody>${(t.columns || []).map(c => `<tr>
+            <td><strong>${escapeHtml(c.name)}</strong></td>
+            <td>${escapeHtml(c.dtype || c.type)}</td>
+            <td>${c.pk ? '🔑' : ''}</td>
+            <td>${c.fk ? escapeHtml(c.fk) : ''}</td>
+            <td>${c.nullable !== false ? '✓' : ''}</td>
+            <td>${escapeHtml(c.default || '')}</td>
+          </tr>`).join('')}</tbody></table></div>
+        </div>`).join('') : '<div class="empty-state"><div>No tables defined</div></div>'}
+    </div>
+
+    <div class="card">
+      <div class="card-title">DDL</div>
+      <div class="tabs">
+        ${['mysql','postgresql','sqlite'].map(d => `<div class="tab ${dbTab===d?'active':''}" onclick="switchDbTab('${d}')">${d.toUpperCase()}</div>`).join('')}
+      </div>
+      <div id="ddlContent">${codeBlock(getDDL(dbTab) || '-- No DDL generated for ' + dbTab, 'sql')}</div>
+    </div>
+
+    ${er ? `<div class="card">
+      <div class="card-title">ER Diagram (PlantUML)</div>
+      ${plantumlImg(er)}
+      ${codeBlock(er, 'plantuml')}
+    </div>` : ''}`;
+}
+
+function switchDbTab(tab) {
+  dbTab = tab;
+  renderPhaseContent();
+}
+
+// ---- Phase: Interface ----
+function renderInterface(el, artifact, execBtn) {
+  const endpoints = artifact.endpoints || [];
+  const openapi = artifact.openapi_spec || '';
+  const reqMap = artifact.req_to_ep_map || {};
+  const ucMap = artifact.uc_to_ep_map || {};
+
+  el.innerHTML = `
+    <div class="phase-title">🔌 Interface Design</div>
+    <div class="phase-desc">API endpoints with requirement traceability</div>
+    ${execBtn}
+
+    <div class="card">
+      <div class="card-title">Endpoints (${endpoints.length})</div>
+      ${endpoints.length ? `<div class="table-wrap"><table>
+        <thead><tr><th>Method</th><th>Path</th><th>Summary</th><th>Req ID</th></tr></thead>
+        <tbody>${endpoints.map(ep => `<tr>
+          <td>${methodBadge(ep.method)}</td>
+          <td><code>${escapeHtml(ep.path)}</code></td>
+          <td>${escapeHtml(ep.summary || ep.description || '')}</td>
+          <td>${escapeHtml((ep.req_links || []).join(', '))}</td>
+        </tr>`).join('')}</tbody></table></div>` : '<div class="empty-state"><div>No endpoints</div></div>'}
+    </div>
+
+    ${Object.keys(reqMap).length ? `<div class="card">
+      <div class="card-title">Requirement → Endpoint Mapping</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Requirement</th><th>Endpoints</th></tr></thead>
+        <tbody>${Object.entries(reqMap).map(([reqId, eps]) => `<tr>
+          <td>${escapeHtml(reqId)}</td>
+          <td>${eps.map(ep => `<code>${escapeHtml(ep)}</code>`).join(', ')}</td>
+        </tr>`).join('')}</tbody></table></div>
+    </div>` : ''}
+
+    ${openapi ? `<div class="card">
+      <div class="card-title">OpenAPI Spec</div>
+      ${codeBlock(typeof openapi === 'string' ? openapi : JSON.stringify(openapi, null, 2), 'yaml')}
+    </div>` : ''}`;
+}
+
+function methodBadge(m) {
+  const color = { GET: 'badge-green', POST: 'badge-blue', PUT: 'badge-orange', DELETE: 'badge-red', PATCH: 'badge-purple' };
+  const cls = color[m] || 'badge-gray';
+  return `<span class="badge ${cls}">${m}</span>`;
+}
+
+// ---- Phase: Sequence ----
+function renderSequence(el, artifact, execBtn) {
+  const sequences = artifact.sequences || [];
+  const plantumlCode = artifact.plantuml_code || '';
+  el.innerHTML = `
+    <div class="phase-title">🔄 Sequence Diagrams</div>
+    <div class="phase-desc">Sequence diagrams with PlantUML</div>
+    ${execBtn}
+
+    ${sequences.length ? sequences.map(s => `
+      <div class="card">
+        <div class="card-title">${escapeHtml(s.name || s.seq_id || 'Diagram')}</div>
+        <div style="font-size:12px;color:var(--gray-500);margin-bottom:8px;">
+          Participants: ${(s.participants || []).join(', ')} | 
+          Messages: ${(s.messages || []).length}
+        </div>
+        <div style="font-size:12px;color:var(--gray-500);">
+          <strong>Flow:</strong>
+          ${(s.messages || []).map(m =>
+            `<div style="margin:2px 0;padding:2px 8px;border-left:3px solid var(--blue-200);">
+               ${escapeHtml(m.source || '?')} → ${escapeHtml(m.target || '?')}: ${escapeHtml(m.message || '')}
+             </div>`
+          ).join('')}
+        </div>
+      </div>`).join('') : '<div class="card"><div class="empty-state"><div>No sequence diagrams yet</div></div></div>'}
+
+    ${plantumlCode ? `<div class="card">
+      <div class="card-title">PlantUML Diagram</div>
+      ${plantumlImg(plantumlCode)}
+      ${codeBlock(plantumlCode, 'plantuml')}
+    </div>` : ''}`;
+}
+
+// ---- Phase: Prototype ----
+function renderPrototype(el, artifact, execBtn) {
+  const pages = artifact.pages || [];
+  el.innerHTML = `
+    <div class="phase-title">🎨 Page Prototypes</div>
+    <div class="phase-desc">Page prototypes with component lists</div>
+    ${execBtn}
+
+    ${pages.length ? `<div class="grid-2">${pages.map(p => `
+      <div class="card">
+        <div class="card-title">
+          ${escapeHtml(p.name || p.page_name || 'Page')}
+          <span class="badge badge-blue">${escapeHtml(p.route || '')}</span>
+        </div>
+        <div style="font-size:12px;color:var(--gray-500);">Page ID: ${escapeHtml(p.page_id || '')}</div>
+        ${(p.components || []).length ? `<div style="margin-top:8px;"><strong>Components:</strong><div class="flex-r mt-8">${(p.components || []).map(c => `<span class="badge badge-gray">${escapeHtml(c.comp_type || comp_type || 'Component')}</span>`).join('')}</div></div>` : ''}
+        ${p.ep_links ? `<div style="margin-top:8px;font-size:12px;"><strong>Endpoints:</strong> ${(Array.isArray(p.ep_links) ? p.ep_links : [p.ep_links]).map(ep => `<code>${escapeHtml(ep)}</code>`).join(', ')}</div>` : ''}
+      </div>`).join('')}</div>` : '<div class="card"><div class="empty-state"><div>No prototype pages yet</div></div></div>'}`;
+}
+
+function previewHtml(btn, html) {
+  const preview = btn.nextElementSibling;
+  if (preview.style.display !== 'block') {
+    preview.style.display = 'block';
+    preview.innerHTML = html;
+    btn.textContent = 'Hide';
+  } else {
+    preview.style.display = 'none';
+    btn.textContent = 'Preview';
+  }
+}
+
+// ---- Phase: Code ----
+let codeFile = null;
+function renderCode(el, artifact, execBtn) {
+  const backend = artifact.backend_files || [];
+  const frontend = artifact.frontend_files || [];
+  const files = [...backend, ...frontend];
+  el.innerHTML = `
+    <div class="phase-title">💻 Generated Code</div>
+    <div class="phase-desc">Backend and frontend generated files</div>
+    ${execBtn}
+
+    ${files.length ? `<div style="display:flex;gap:16px;">
+      <div style="width:240px;min-width:200px;">
+        <div class="card" style="margin:0;">
+          <div class="card-title">Files (${files.length})<div class="card-actions"><button class="btn btn-outline btn-sm" onclick="downloadAllCode()">⬇ Download All</button></div></div>
+          <div class="file-tree">${files.map((f, i) => {
+            const isBackend = (f.path || f.name || '').startsWith('backend') || (f.path || f.name || '').startsWith('app') || (f.path || f.name || '').includes('main.py');
+            const icon = isBackend ? '📦' : '🖥️';
+            const label = f.path || f.name || 'file_' + i;
+            return `<div class="ft-item ${codeFile === i ? 'active' : ''}" onclick="showCodeFile(${i})"><span>${icon}</span> <span>${escapeHtml(label)}</span></div>`;
+          }).join('')}</div>
+        </div>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div class="card" style="margin:0;">
+          <div class="card-title">
+            ${codeFile !== null ? escapeHtml(files[codeFile]?.path || files[codeFile]?.name || '') : 'Select a file'}
+            ${codeFile !== null ? `<div class="card-actions"><button class="btn btn-outline btn-sm" onclick="downloadCode(${codeFile})">⬇ Download</button></div>` : ''}
+          </div>
+          ${codeFile !== null ? codeBlock(files[codeFile]?.content || files[codeFile]?.code || '// No content', guessLang(files[codeFile]?.path || files[codeFile]?.name || '')) : '<div class="empty-state"><div>Click a file to view</div></div>'}
+        </div>
+      </div>
+    </div>` : '<div class="card"><div class="empty-state"><div>No code generated yet</div></div></div>'}`;
+}
+
+function showCodeFile(idx) {
+  codeFile = idx;
+  renderPhaseContent();
+}
+
+async function downloadAllCode() {
+  const url = `${API}/api/projects/${state.projectId}/code/download`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) { const j = await res.json(); alert('Download error: ' + (j.detail || res.statusText)); return; }
+    const blob = await res.blob();
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${state.projectId.slice(0,8)}_code.zip`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  } catch(e) { alert('Download error: ' + e.message); }
+}
+
+function downloadCode(idx) {
+  const a = state.phaseArtifact;
+  const allFiles = [...(a ? a.backend_files || [] : []), ...(a ? a.frontend_files || [] : [])];
+  const f = allFiles[idx];
+  if (!f) return;
+  const content = f.content || '';
+  const name = f.path || 'file.txt';
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url; link.download = name.split('/').pop() || 'file.txt';
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function guessLang(path) {
+  if (!path) return 'text';
+  if (path.endsWith('.py')) return 'python';
+  if (path.endsWith('.js')) return 'javascript';
+  if (path.endsWith('.ts') || path.endsWith('.tsx')) return 'typescript';
+  if (path.endsWith('.html')) return 'html';
+  if (path.endsWith('.css')) return 'css';
+  if (path.endsWith('.sql')) return 'sql';
+  if (path.endsWith('.java')) return 'java';
+  if (path.endsWith('.yaml') || path.endsWith('.yml')) return 'yaml';
+  if (path.endsWith('.json')) return 'json';
+  if (path.endsWith('.md')) return 'markdown';
+  return 'text';
+}
+
+// ---- Phase: Test ----
+function renderTest(el, artifact, execBtn) {
+  const tests = artifact.test_cases || [];
+  const coverageObj = artifact.coverage_map || {};
+  const testCode = artifact.test_code || '';
+  el.innerHTML = `
+    <div class="phase-title">🧪 Test Cases</div>
+    <div class="phase-desc">Test cases with coverage map</div>
+    ${execBtn}
+
+    <div class="card">
+      <div class="card-title">Test Cases (${tests.length})</div>
+      ${tests.length ? `<div class="table-wrap"><table>
+        <thead><tr><th>ID</th><th>Title</th><th>Type</th><th>Steps</th><th>Expected</th></tr></thead>
+        <tbody>${tests.map(t => `<tr>
+          <td>${escapeHtml(t.tc_id || t.id || '')}</td>
+          <td>${escapeHtml(t.title || t.name || '')}</td>
+          <td>${t.test_type ? `<span class="badge ${t.test_type==='functional'?'badge-green':t.test_type==='integration'?'badge-purple':t.test_type==='api'?'badge-blue':t.test_type==='security'?'badge-red':t.test_type==='negative'?'badge-orange':t.test_type==='performance'?'badge-cyan':'badge-gray'}">${escapeHtml(t.test_type)}</span>` : ''}</td>
+          <td>${escapeHtml(Array.isArray(t.steps) ? t.steps.join('; ') : t.steps || '')}</td>
+          <td>${escapeHtml(t.expected || '')}</td>
+        </tr>`).join('')}</tbody></table></div>` : '<div class="empty-state"><div>No test cases yet</div></div>'}
+    </div>
+
+    ${Object.keys(coverageObj).length ? `<div class="card">
+      <div class="card-title">Coverage Map (Requirement → Test)</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Requirement</th><th>Test Cases</th></tr></thead>
+        <tbody>${Object.entries(coverageObj).map(([reqId, tcIds]) => `<tr>
+          <td>${escapeHtml(reqId)}</td>
+          <td>${(tcIds || []).map(tid => `<span class="badge badge-green">${escapeHtml(tid)}</span>`).join(' ')}</td>
+        </tr>`).join('')}</tbody></table></div></div>` : ''}
+
+    ${testCode ? `<div class="card">
+      <div class="card-title">Generated Test Code</div>
+      ${codeBlock(testCode, 'python')}
+    </div>` : ''}`;
+}
+
+// ----- Code block helper -----
+function codeBlock(code, lang) {
+  if (!code) return '<div class="empty-state"><div>No content</div></div>';
+  const escaped = escapeHtml(code);
+  return `<div class="code-block" style="position:relative;">
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <code>${syntaxHighlight(escaped, lang)}</code>
+  </div>`;
+}
+
+function syntaxHighlight(escaped, lang) {
+  if (lang === 'plantuml') {
+    return escaped.replace(/(@start\w+|@end\w+)/g, '<span class="kw">$1</span>')
+      .replace(/("(?:[^"\\]|\\.)*")/g, '<span class="str">$1</span>')
+      .replace(/(->|-->|\.\.>|-->>)/g, '<span class="op">$1</span>');
+  }
+  if (lang === 'sql') {
+    return escaped.replace(/\b(SELECT|FROM|WHERE|INSERT|INTO|VALUES|UPDATE|SET|CREATE|TABLE|ALTER|ADD|DROP|INDEX|PRIMARY|KEY|FOREIGN|REFERENCES|NOT|NULL|DEFAULT|INT|VARCHAR|BOOLEAN|TIMESTAMP|TEXT|BIGINT|SERIAL|UNIQUE|CHECK|CONSTRAINT|INNER|LEFT|RIGHT|JOIN|ON|AND|OR|AS|ORDER|BY|GROUP|HAVING|LIMIT|OFFSET|DELETE|CASCADE)\b/g, '<span class="kw">$1</span>')
+      .replace(/('(?:[^'\\]|\\.)*')/g, '<span class="str">$1</span>')
+      .replace(/(--.*)/g, '<span class="cm">$1</span>');
+  }
+  if (lang === 'python' || lang === 'javascript' || lang === 'typescript') {
+    const kws = lang === 'python'
+      ? '\\b(def|class|import|from|async|await|return|if|else|elif|for|while|try|except|finally|with|as|pass|None|True|False|and|or|not|in|is|lambda|yield|raise|break|continue|self|__init__)\\b'
+      : '\\b(function|const|let|var|class|import|export|from|return|if|else|for|while|try|catch|finally|async|await|new|this|typeof|instanceof|true|false|null|undefined|throw|switch|case|break|continue|default|interface|type|enum|implements|extends)\\b';
+    return escaped.replace(new RegExp(kws, 'gi'), '<span class="kw">$1</span>')
+      .replace(/("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)/g, '<span class="str">$1</span>')
+      .replace(/(#.*|\/\/.*)/g, '<span class="cm">$1</span>')
+      .replace(/\b(\d+\.?\d*)\b/g, '<span class="num">$1</span>');
+  }
+  if (lang === 'json') {
+    return escaped.replace(/("(?:[^"\\]|\\.)*")\s*:/g, '<span class="kw">$1</span>:')
+      .replace(/:\s*("(?:[^"\\]|\\.)*")/g, ': <span class="str">$1</span>')
+      .replace(/:\s*(\d+\.?\d*|true|false|null)/g, ': <span class="num">$1</span>');
+  }
+  return escaped;
+}
+
+function copyCode(btn) {
+  const code = btn.parentElement.querySelector('code')?.textContent || '';
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = code; ta.style.position = 'fixed'; ta.style.left = '-9999px';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+  });
+}
+
+// ----- Phase Actions -----
+async function executePhase() {
+  try {
+    const res = await apiPost(`/api/projects/${state.projectId}/phases/${state.phase}/execute`, { params: {} });
+    state.phaseArtifact = res;
+    await loadAll();
+  } catch(e) {
+    alert('Execute error: ' + e.message);
+  }
+}
+
+async function doApprove() {
+  try {
+    await apiPost(`/api/projects/${state.projectId}/phases/${state.phase}/approve`, { comments: '' });
+    await loadAll();
+    const idx = PHASE_ORDER.indexOf(state.phase);
+    if (idx >= 0 && idx < PHASE_ORDER.length - 1) {
+      switchPhase(PHASE_ORDER[idx + 1]);
+    }
+  } catch(e) {
+    alert('Approve error: ' + e.message);
+  }
+}
+
+async function doReject() {
+  const reason = prompt('Reason for rejection:');
+  if (reason === null) return;
+  try {
+    await apiPost(`/api/projects/${state.projectId}/phases/${state.phase}/reject`, { reason: reason, feedback: reason });
+    await loadAll();
+  } catch(e) {
+    alert('Reject error: ' + e.message);
+  }
+}
+
+async function doRollback() {
+  if (!confirm('Rollback will clear all subsequent phases. Continue?')) return;
+  const reason = prompt('Reason for rollback:');
+  try {
+    await apiPost(`/api/projects/${state.projectId}/phases/${state.phase}/rollback`, { reason: reason || '' });
+    await loadAll();
+  } catch(e) {
+    alert('Rollback error: ' + e.message);
+  }
+}
+
+// ----- Artifact Editor -----
+function editArtifact() {
+  const data = state.phaseArtifact || {};
+  const p = PHASE_LIST.find(x => x.id === state.phase);
+  openModal(
+    `Edit Artifact — ${p ? p.label : state.phase}`,
+    `<textarea id="artifactEditor" style="min-height:400px;font-family:monospace;font-size:13px;">${escapeHtml(JSON.stringify(data, null, 2))}</textarea>`,
+    [
+      { label: 'Cancel', class: 'btn-outline', action: closeModal },
+      { label: 'Save', class: 'btn-blue', action: saveArtifactEdit },
+    ]
+  );
+}
+
+async function saveArtifactEdit() {
+  const val = $('artifactEditor').value;
+  try {
+    const parsed = JSON.parse(val);
+    await apiPost(`/api/projects/${state.projectId}/phases/${state.phase}/artifact`, { artifact_data: parsed });
+    state.phaseArtifact = parsed;
+    closeModal();
+    renderPhaseContent();
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+async function saveArtifactSilent(data) {
+  try {
+    await apiPost(`/api/projects/${state.projectId}/phases/${state.phase}/artifact`, { artifact_data: data });
+  } catch(e) {
+    // silent
+  }
+}
+
+// ----- Trace / Audit Log -----
+async function loadTrace() {
+  if (!state.projectId) return;
+  const filter = $('traceFilter').value;
+  try {
+    state.traceData = await apiGet(`/api/projects/${state.projectId}/trace?phase=${filter}&limit=50`);
+  } catch(e) {
+    state.traceData = [];
+  }
+  renderTrace();
+}
+
+function renderTrace() {
+  const el = $('traceBody');
+  if (!state.traceData.length) {
+    el.innerHTML = '<div style="padding:10px;text-align:center;color:var(--gray-400);font-size:12px;">No audit events</div>';
+    return;
+  }
+  el.innerHTML = state.traceData.map(t => {
+    const action = t.action || t.event || '';
+    const phase = t.phase || '';
+    const time = t.timestamp || t.created_at || '';
+    const user = t.user_id || t.user || 'system';
+    const cls = action === 'approve' ? 'badge-green' : action === 'reject' ? 'badge-red' : action === 'rollback' ? 'badge-yellow' : 'badge-blue';
+    return `<div class="trace-item">
+      <span class="ti-time">${escapeHtml(time)}</span>
+      <span class="badge ${cls}">${escapeHtml(action)}</span>
+      <span class="badge badge-gray">${escapeHtml(phase)}</span>
+      <span style="color:var(--gray-500);font-size:12px;">${escapeHtml(user)}</span>
+    </div>`;
+  }).join('');
+}
+
+function toggleTrace() {
+  state.traceOpen = !state.traceOpen;
+  const panel = $('tracePanel');
+  panel.classList.toggle('collapsed', !state.traceOpen);
+  $('traceArrow').textContent = state.traceOpen ? '▼' : '▶';
+  if (state.traceOpen) loadTrace();
+}
+
+// ----- Modal -----
+function openModal(title, bodyHTML, buttons) {
+  $('modalTitle').textContent = title;
+  $('modalBody').innerHTML = bodyHTML;
+  const footer = $('modalFooter');
+  footer.innerHTML = buttons.map(b =>
+    `<button class="btn ${b.class || ''}" onclick="(${b.action.toString()})()">${b.label}</button>`
+  ).join('');
+  $('modalOverlay').classList.add('open');
+}
+
+function closeModal() {
+  $('modalOverlay').classList.remove('open');
+}
+
+// ----- Keyboard shortcuts -----
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+
+// ----- Init -----
+loadProjects();
+</script>
+</body>
+</html>

@@ -1,0 +1,876 @@
+{
+  "project_id": "5533bfc0-8cee-457e-b789-b0e852cc5644",
+  "project_name": "My Project",
+  "created_at": "2026-06-15T07:49:26.881572",
+  "updated_at": "2026-06-15T07:49:26.881572",
+  "requirements": {
+    "raw_input": "",
+    "vocab_gaps": [
+      "user_role",
+      "auth",
+      "error_handling",
+      "validation",
+      "data_persistence",
+      "pagination",
+      "search",
+      "notification",
+      "audit",
+      "permission",
+      "concurrency",
+      "performance",
+      "i18n"
+    ],
+    "items": [
+      {
+        "req_id": "REQ-001",
+        "title": "",
+        "description": "",
+        "priority": "medium",
+        "category": "functional",
+        "status": "draft",
+        "gap_notes": null
+      }
+    ],
+    "version": "1.0",
+    "status": "approved"
+  },
+  "domain_model": {
+    "actors": [
+      {
+        "actor_id": "ACT-001",
+        "name": "用户",
+        "description": "系统用户"
+      }
+    ],
+    "use_cases": [
+      {
+        "uc_id": "UC-001",
+        "name": "",
+        "description": "",
+        "actors": [
+          "ACT-001"
+        ],
+        "preconditions": [
+          "用户已进入系统"
+        ],
+        "postconditions": [
+          "操作完成，数据已保存"
+        ],
+        "main_flow": [
+          "1. 用户进入模块",
+          "2. 系统展示界面",
+          "3. 用户执行操作",
+          "4. 系统校验输入数据",
+          "5. 系统处理请求并返回结果",
+          "6. 系统记录操作日志"
+        ],
+        "alt_flows": [
+          [
+            "异常处理：系统返回错误信息"
+          ]
+        ],
+        "req_links": [
+          "REQ-001"
+        ]
+      }
+    ],
+    "plantuml_code": "@startuml\nleft to right direction\nskinparam packageStyle rectangle\n\nactor 用户 as User\nactor 用户 as ACT001\n\nrectangle 系统 {\n  usecase \"\" as UC001\n}\n\nACT001 --> UC001\n@enduml",
+    "version": "1.0",
+    "status": "approved"
+  },
+  "database": {
+    "tables": [
+      {
+        "name": "users",
+        "columns": [
+          {
+            "name": "id",
+            "dtype": "BIGINT",
+            "nullable": false,
+            "pk": true,
+            "fk": null,
+            "default": null,
+            "comment": "主键ID"
+          },
+          {
+            "name": "username",
+            "dtype": "VARCHAR(50)",
+            "nullable": false,
+            "pk": false,
+            "fk": null,
+            "default": null,
+            "comment": "用户名"
+          },
+          {
+            "name": "password_hash",
+            "dtype": "VARCHAR(255)",
+            "nullable": false,
+            "pk": false,
+            "fk": null,
+            "default": null,
+            "comment": "密码哈希"
+          },
+          {
+            "name": "email",
+            "dtype": "VARCHAR(100)",
+            "nullable": true,
+            "pk": false,
+            "fk": null,
+            "default": null,
+            "comment": "邮箱"
+          },
+          {
+            "name": "phone",
+            "dtype": "VARCHAR(20)",
+            "nullable": true,
+            "pk": false,
+            "fk": null,
+            "default": null,
+            "comment": "手机号"
+          },
+          {
+            "name": "status",
+            "dtype": "TINYINT",
+            "nullable": false,
+            "pk": false,
+            "fk": null,
+            "default": "1",
+            "comment": "状态: 1=启用, 0=禁用"
+          },
+          {
+            "name": "created_at",
+            "dtype": "DATETIME",
+            "nullable": false,
+            "pk": false,
+            "fk": null,
+            "default": "CURRENT_TIMESTAMP",
+            "comment": "创建时间"
+          },
+          {
+            "name": "updated_at",
+            "dtype": "DATETIME",
+            "nullable": false,
+            "pk": false,
+            "fk": null,
+            "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+            "comment": "更新时间"
+          }
+        ],
+        "comment": "用户表"
+      },
+      {
+        "name": "roles",
+        "columns": [
+          {
+            "name": "id",
+            "dtype": "BIGINT",
+            "nullable": false,
+            "pk": true,
+            "fk": null,
+            "default": null,
+            "comment": "主键ID"
+          },
+          {
+            "name": "name",
+            "dtype": "VARCHAR(50)",
+            "nullable": false,
+            "pk": false,
+            "fk": null,
+            "default": null,
+            "comment": "角色名称"
+          },
+          {
+            "name": "code",
+            "dtype": "VARCHAR(50)",
+            "nullable": false,
+            "pk": false,
+            "fk": null,
+            "default": null,
+            "comment": "角色编码"
+          },
+          {
+            "name": "description",
+            "dtype": "VARCHAR(255)",
+            "nullable": true,
+            "pk": false,
+            "fk": null,
+            "default": null,
+            "comment": "角色描述"
+          },
+          {
+            "name": "created_at",
+            "dtype": "DATETIME",
+            "nullable": false,
+            "pk": false,
+            "fk": null,
+            "default": "CURRENT_TIMESTAMP",
+            "comment": "创建时间"
+          }
+        ],
+        "comment": "角色表"
+      },
+      {
+        "name": "user_roles",
+        "columns": [
+          {
+            "name": "id",
+            "dtype": "BIGINT",
+            "nullable": false,
+            "pk": true,
+            "fk": null,
+            "default": null,
+            "comment": "主键ID"
+          },
+          {
+            "name": "user_id",
+            "dtype": "BIGINT",
+            "nullable": false,
+            "pk": false,
+            "fk": "users.id",
+            "default": null,
+            "comment": "用户ID"
+          },
+          {
+            "name": "role_id",
+            "dtype": "BIGINT",
+            "nullable": false,
+            "pk": false,
+            "fk": "roles.id",
+            "default": null,
+            "comment": "角色ID"
+          }
+        ],
+        "comment": "用户角色关联表"
+      },
+      {
+        "name": "operation_logs",
+        "columns": [
+          {
+            "name": "id",
+            "dtype": "BIGINT",
+            "nullable": false,
+            "pk": true,
+            "fk": null,
+            "default": null,
+            "comment": "主键ID"
+          },
+          {
+            "name": "user_id",
+            "dtype": "BIGINT",
+            "nullable": false,
+            "pk": false,
+            "fk": "users.id",
+            "default": null,
+            "comment": "操作用户ID"
+          },
+          {
+            "name": "action",
+            "dtype": "VARCHAR(100)",
+            "nullable": false,
+            "pk": false,
+            "fk": null,
+            "default": null,
+            "comment": "操作类型"
+          },
+          {
+            "name": "target_type",
+            "dtype": "VARCHAR(50)",
+            "nullable": true,
+            "pk": false,
+            "fk": null,
+            "default": null,
+            "comment": "操作对象类型"
+          },
+          {
+            "name": "target_id",
+            "dtype": "VARCHAR(50)",
+            "nullable": true,
+            "pk": false,
+            "fk": null,
+            "default": null,
+            "comment": "操作对象ID"
+          },
+          {
+            "name": "detail",
+            "dtype": "TEXT",
+            "nullable": true,
+            "pk": false,
+            "fk": null,
+            "default": null,
+            "comment": "操作详情"
+          },
+          {
+            "name": "ip_address",
+            "dtype": "VARCHAR(45)",
+            "nullable": true,
+            "pk": false,
+            "fk": null,
+            "default": null,
+            "comment": "IP地址"
+          },
+          {
+            "name": "created_at",
+            "dtype": "DATETIME",
+            "nullable": false,
+            "pk": false,
+            "fk": null,
+            "default": "CURRENT_TIMESTAMP",
+            "comment": "创建时间"
+          }
+        ],
+        "comment": "操作日志表"
+      }
+    ],
+    "ddl_mysql": "-- MYSQL DDL generated by Waterfall Agent\nSET NAMES utf8mb4;\nSET FOREIGN_KEY_CHECKS = 0;\n\nCREATE TABLE IF NOT EXISTS `users` (\n  `id` BIGINT AUTO_INCREMENT NOT NULL COMMENT '主键ID',\n  `username` VARCHAR(50) NOT NULL COMMENT '用户名',\n  `password_hash` VARCHAR(255) NOT NULL COMMENT '密码哈希',\n  `email` VARCHAR(100) DEFAULT NULL COMMENT '邮箱',\n  `phone` VARCHAR(20) DEFAULT NULL COMMENT '手机号',\n  `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态: 1=启用, 0=禁用',\n  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',\n  `updated_at` DATETIME NOT NULL COMMENT '更新时间',\n  PRIMARY KEY (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';\n\nCREATE TABLE IF NOT EXISTS `roles` (\n  `id` BIGINT AUTO_INCREMENT NOT NULL COMMENT '主键ID',\n  `name` VARCHAR(50) NOT NULL COMMENT '角色名称',\n  `code` VARCHAR(50) NOT NULL COMMENT '角色编码',\n  `description` VARCHAR(255) DEFAULT NULL COMMENT '角色描述',\n  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',\n  PRIMARY KEY (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色表';\n\nCREATE TABLE IF NOT EXISTS `user_roles` (\n  `id` BIGINT AUTO_INCREMENT NOT NULL COMMENT '主键ID',\n  `user_id` BIGINT NOT NULL COMMENT '用户ID',\n  `role_id` BIGINT NOT NULL COMMENT '角色ID',\n  PRIMARY KEY (`id`),\n  CONSTRAINT fk_user_roles_user_id FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),\n  CONSTRAINT fk_user_roles_role_id FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户角色关联表';\n\nCREATE TABLE IF NOT EXISTS `operation_logs` (\n  `id` BIGINT AUTO_INCREMENT NOT NULL COMMENT '主键ID',\n  `user_id` BIGINT NOT NULL COMMENT '操作用户ID',\n  `action` VARCHAR(100) NOT NULL COMMENT '操作类型',\n  `target_type` VARCHAR(50) DEFAULT NULL COMMENT '操作对象类型',\n  `target_id` VARCHAR(50) DEFAULT NULL COMMENT '操作对象ID',\n  `detail` TEXT DEFAULT NULL COMMENT '操作详情',\n  `ip_address` VARCHAR(45) DEFAULT NULL COMMENT 'IP地址',\n  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',\n  PRIMARY KEY (`id`),\n  CONSTRAINT fk_operation_logs_user_id FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='操作日志表';\n\nSET FOREIGN_KEY_CHECKS = 1;",
+    "ddl_postgres": "-- POSTGRES DDL generated by Waterfall Agent\n\nCREATE TABLE IF NOT EXISTS `users` (\n  `id` BIGSERIAL NOT NULL,\n  `username` VARCHAR(50) NOT NULL,\n  `password_hash` VARCHAR(255) NOT NULL,\n  `email` VARCHAR(100) DEFAULT NULL,\n  `phone` VARCHAR(20) DEFAULT NULL,\n  `status` SMALLINT NOT NULL DEFAULT 1,\n  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` TIMESTAMP NOT NULL,\n  PRIMARY KEY (`id`)\n);\n\nCREATE TABLE IF NOT EXISTS `roles` (\n  `id` BIGSERIAL NOT NULL,\n  `name` VARCHAR(50) NOT NULL,\n  `code` VARCHAR(50) NOT NULL,\n  `description` VARCHAR(255) DEFAULT NULL,\n  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`)\n);\n\nCREATE TABLE IF NOT EXISTS `user_roles` (\n  `id` BIGSERIAL NOT NULL,\n  `user_id` BIGSERIAL NOT NULL,\n  `role_id` BIGSERIAL NOT NULL,\n  PRIMARY KEY (`id`),\n  CONSTRAINT fk_user_roles_user_id FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),\n  CONSTRAINT fk_user_roles_role_id FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`)\n);\n\nCREATE TABLE IF NOT EXISTS `operation_logs` (\n  `id` BIGSERIAL NOT NULL,\n  `user_id` BIGSERIAL NOT NULL,\n  `action` VARCHAR(100) NOT NULL,\n  `target_type` VARCHAR(50) DEFAULT NULL,\n  `target_id` VARCHAR(50) DEFAULT NULL,\n  `detail` TEXT DEFAULT NULL,\n  `ip_address` VARCHAR(45) DEFAULT NULL,\n  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  CONSTRAINT fk_operation_logs_user_id FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)\n);\n",
+    "ddl_sqlite": "-- SQLITE DDL generated by Waterfall Agent\n\nCREATE TABLE IF NOT EXISTS `users` (\n  `id` INTEGER NOT NULL,\n  `username` TEXT NOT NULL,\n  `password_hash` TEXT NOT NULL,\n  `email` TEXT DEFAULT NULL,\n  `phone` TEXT DEFAULT NULL,\n  `status` INTEGER NOT NULL DEFAULT 1,\n  `created_at` TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` TEXT NOT NULL,\n  PRIMARY KEY (`id`)\n);\n\nCREATE TABLE IF NOT EXISTS `roles` (\n  `id` INTEGER NOT NULL,\n  `name` TEXT NOT NULL,\n  `code` TEXT NOT NULL,\n  `description` TEXT DEFAULT NULL,\n  `created_at` TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`)\n);\n\nCREATE TABLE IF NOT EXISTS `user_roles` (\n  `id` INTEGER NOT NULL,\n  `user_id` INTEGER NOT NULL,\n  `role_id` INTEGER NOT NULL,\n  PRIMARY KEY (`id`),\n  CONSTRAINT fk_user_roles_user_id FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),\n  CONSTRAINT fk_user_roles_role_id FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`)\n);\n\nCREATE TABLE IF NOT EXISTS `operation_logs` (\n  `id` INTEGER NOT NULL,\n  `user_id` INTEGER NOT NULL,\n  `action` TEXT NOT NULL,\n  `target_type` TEXT DEFAULT NULL,\n  `target_id` TEXT DEFAULT NULL,\n  `detail` TEXT DEFAULT NULL,\n  `ip_address` VARCHAR(45) DEFAULT NULL,\n  `created_at` TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  CONSTRAINT fk_operation_logs_user_id FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)\n);\n",
+    "plantuml_er": "@startuml\n!theme plain\nskinparam backgroundColor #FEFEFE\n\nentity \"users\" as users {\n  * id : BIGINT [PK]\n  * username : VARCHAR(50)\n  * password_hash : VARCHAR(255)\n  * email : VARCHAR(100)\n  * phone : VARCHAR(20)\n  * status : TINYINT\n  * created_at : DATETIME\n  * updated_at : DATETIME\n}\n\nentity \"roles\" as roles {\n  * id : BIGINT [PK]\n  * name : VARCHAR(50)\n  * code : VARCHAR(50)\n  * description : VARCHAR(255)\n  * created_at : DATETIME\n}\n\nentity \"user_roles\" as user_roles {\n  * id : BIGINT [PK]\n  * user_id : BIGINT [FK: users.id]\n  * role_id : BIGINT [FK: roles.id]\n}\n\nentity \"operation_logs\" as operation_logs {\n  * id : BIGINT [PK]\n  * user_id : BIGINT [FK: users.id]\n  * action : VARCHAR(100)\n  * target_type : VARCHAR(50)\n  * target_id : VARCHAR(50)\n  * detail : TEXT\n  * ip_address : VARCHAR(45)\n  * created_at : DATETIME\n}\n\nuser_roles}|--||users\nuser_roles}|--||roles\noperation_logs}|--||users\n@enduml",
+    "version": "1.0",
+    "status": "approved",
+    "uc_links": {}
+  },
+  "interface": {
+    "endpoints": [
+      {
+        "ep_id": "EP-001",
+        "method": "POST",
+        "path": "/api/v1/auth/login",
+        "summary": "用户登录",
+        "request_schema": {
+          "type": "object",
+          "properties": {
+            "username": {
+              "type": "string",
+              "description": "用户名"
+            },
+            "password": {
+              "type": "string",
+              "description": "密码"
+            }
+          },
+          "required": [
+            "username",
+            "password"
+          ]
+        },
+        "response_schema": {
+          "type": "object",
+          "properties": {
+            "token": {
+              "type": "string"
+            },
+            "user": {
+              "type": "object"
+            }
+          }
+        },
+        "req_links": [
+          "REQ-001"
+        ],
+        "uc_links": [
+          "UC-001"
+        ]
+      },
+      {
+        "ep_id": "EP-002",
+        "method": "POST",
+        "path": "/api/v1/auth/register",
+        "summary": "用户注册",
+        "request_schema": {
+          "type": "object",
+          "properties": {
+            "username": {
+              "type": "string"
+            },
+            "password": {
+              "type": "string"
+            },
+            "email": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "username",
+            "password",
+            "email"
+          ]
+        },
+        "response_schema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer"
+            },
+            "username": {
+              "type": "string"
+            }
+          }
+        },
+        "req_links": [
+          "REQ-001"
+        ],
+        "uc_links": [
+          "UC-001"
+        ]
+      },
+      {
+        "ep_id": "EP-003",
+        "method": "GET",
+        "path": "/api/v1/users/me",
+        "summary": "获取当前用户信息",
+        "request_schema": {},
+        "response_schema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer"
+            },
+            "username": {
+              "type": "string"
+            },
+            "email": {
+              "type": "string"
+            },
+            "roles": {
+              "type": "array"
+            }
+          }
+        },
+        "req_links": [
+          "REQ-001"
+        ],
+        "uc_links": [
+          "UC-001"
+        ]
+      },
+      {
+        "ep_id": "EP-004",
+        "method": "PUT",
+        "path": "/api/v1/users/me",
+        "summary": "更新当前用户信息",
+        "request_schema": {
+          "type": "object",
+          "properties": {
+            "email": {
+              "type": "string"
+            },
+            "phone": {
+              "type": "string"
+            }
+          }
+        },
+        "response_schema": {},
+        "req_links": [
+          "REQ-002"
+        ],
+        "uc_links": [
+          "UC-002"
+        ]
+      },
+      {
+        "ep_id": "EP-005",
+        "method": "GET",
+        "path": "/api/v1/users",
+        "summary": "用户列表（管理员）",
+        "request_schema": {},
+        "response_schema": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "req_links": [
+          "REQ-003"
+        ],
+        "uc_links": [
+          "UC-003"
+        ]
+      },
+      {
+        "ep_id": "EP-006",
+        "method": "GET",
+        "path": "/api/v1/roles",
+        "summary": "角色列表",
+        "request_schema": {},
+        "response_schema": {
+          "type": "array"
+        },
+        "req_links": [
+          "REQ-004"
+        ],
+        "uc_links": [
+          "UC-004"
+        ]
+      },
+      {
+        "ep_id": "EP-007",
+        "method": "POST",
+        "path": "/api/v1/roles",
+        "summary": "创建角色",
+        "request_schema": {},
+        "response_schema": {},
+        "req_links": [
+          "REQ-004"
+        ],
+        "uc_links": [
+          "UC-004"
+        ]
+      },
+      {
+        "ep_id": "EP-008",
+        "method": "GET",
+        "path": "/api/v1/operation-logs",
+        "summary": "操作日志列表",
+        "request_schema": {},
+        "response_schema": {
+          "type": "array"
+        },
+        "req_links": [
+          "REQ-005"
+        ],
+        "uc_links": [
+          "UC-005"
+        ]
+      }
+    ],
+    "openapi_spec": "openapi: 3.0.0\ninfo:\n  title: Waterfall Agent API\n  version: 1.0.0\npaths:\n  /api/v1/auth/login:\n    post:\n      summary: 用户登录\n      operationId: ep_001\n      responses:\n        '200':\n          description: Successful response\n  /api/v1/auth/register:\n    post:\n      summary: 用户注册\n      operationId: ep_002\n      responses:\n        '200':\n          description: Successful response\n  /api/v1/users/me:\n    get:\n      summary: 获取当前用户信息\n      operationId: ep_003\n      responses:\n        '200':\n          description: Successful response\n  /api/v1/users/me:\n    put:\n      summary: 更新当前用户信息\n      operationId: ep_004\n      responses:\n        '200':\n          description: Successful response\n  /api/v1/users:\n    get:\n      summary: 用户列表（管理员）\n      operationId: ep_005\n      responses:\n        '200':\n          description: Successful response\n  /api/v1/roles:\n    get:\n      summary: 角色列表\n      operationId: ep_006\n      responses:\n        '200':\n          description: Successful response\n  /api/v1/roles:\n    post:\n      summary: 创建角色\n      operationId: ep_007\n      responses:\n        '200':\n          description: Successful response\n  /api/v1/operation-logs:\n    get:\n      summary: 操作日志列表\n      operationId: ep_008\n      responses:\n        '200':\n          description: Successful response",
+    "uc_to_ep_map": {
+      "UC-001": [
+        "EP-001",
+        "EP-002",
+        "EP-003"
+      ],
+      "UC-002": [
+        "EP-004"
+      ],
+      "UC-003": [
+        "EP-005"
+      ],
+      "UC-004": [
+        "EP-006",
+        "EP-007"
+      ],
+      "UC-005": [
+        "EP-008"
+      ]
+    },
+    "req_to_ep_map": {
+      "REQ-001": [
+        "EP-001",
+        "EP-002",
+        "EP-003"
+      ],
+      "REQ-002": [
+        "EP-004"
+      ],
+      "REQ-003": [
+        "EP-005"
+      ],
+      "REQ-004": [
+        "EP-006",
+        "EP-007"
+      ],
+      "REQ-005": [
+        "EP-008"
+      ]
+    },
+    "version": "1.0",
+    "status": "approved"
+  },
+  "sequence": {
+    "sequences": [
+      {
+        "seq_id": "SEQ-001",
+        "name": "",
+        "participants": [
+          "数据库",
+          "系统",
+          "用户"
+        ],
+        "messages": [
+          {
+            "source": "用户",
+            "target": "系统",
+            "message": "发起请求",
+            "msg_type": "request"
+          },
+          {
+            "source": "系统",
+            "target": "系统",
+            "message": "校验输入参数",
+            "msg_type": "request"
+          },
+          {
+            "source": "系统",
+            "target": "数据库",
+            "message": "查询/写入数据",
+            "msg_type": "request"
+          },
+          {
+            "source": "数据库",
+            "target": "系统",
+            "message": "返回数据结果",
+            "msg_type": "request"
+          },
+          {
+            "source": "系统",
+            "target": "系统",
+            "message": "处理业务逻辑",
+            "msg_type": "request"
+          },
+          {
+            "source": "系统",
+            "target": "用户",
+            "message": "返回结果",
+            "msg_type": "request"
+          }
+        ],
+        "uc_link": "UC-001"
+      }
+    ],
+    "plantuml_code": "@startuml\nskinparam sequenceMessageAlign center\n\ntitle 时序图: \nparticipant \"数据库\" as 数据库\nparticipant \"系统\" as 系统\nparticipant \"用户\" as 用户\n\n用户->系统: 发起请求\n系统->系统: 校验输入参数\n系统->数据库: 查询/写入数据\n数据库->系统: 返回数据结果\n系统->系统: 处理业务逻辑\n系统->用户: 返回结果\n\nnewpage\n\n@enduml",
+    "version": "1.0",
+    "status": "approved"
+  },
+  "prototype": {
+    "pages": [
+      {
+        "page_id": "PAGE-001",
+        "name": "登录页面",
+        "route": "/login",
+        "components": [
+          {
+            "comp_id": "login-form",
+            "comp_type": "LoginForm",
+            "props": {
+              "fields": [
+                "username",
+                "password"
+              ]
+            }
+          }
+        ],
+        "ep_links": [
+          "EP-001"
+        ]
+      },
+      {
+        "page_id": "PAGE-002",
+        "name": "注册页面",
+        "route": "/register",
+        "components": [
+          {
+            "comp_id": "register-form",
+            "comp_type": "RegisterForm",
+            "props": {
+              "fields": [
+                "username",
+                "password",
+                "email"
+              ]
+            }
+          }
+        ],
+        "ep_links": [
+          "EP-002"
+        ]
+      },
+      {
+        "page_id": "PAGE-003",
+        "name": "个人中心",
+        "route": "/profile",
+        "components": [
+          {
+            "comp_id": "user-info",
+            "comp_type": "UserInfoCard",
+            "props": {}
+          },
+          {
+            "comp_id": "edit-form",
+            "comp_type": "EditForm",
+            "props": {}
+          }
+        ],
+        "ep_links": [
+          "EP-003",
+          "EP-004"
+        ]
+      },
+      {
+        "page_id": "PAGE-004",
+        "name": "用户管理",
+        "route": "/admin/users",
+        "components": [
+          {
+            "comp_id": "user-table",
+            "comp_type": "DataTable",
+            "props": {}
+          },
+          {
+            "comp_id": "search-bar",
+            "comp_type": "SearchBar",
+            "props": {}
+          }
+        ],
+        "ep_links": [
+          "EP-005"
+        ]
+      },
+      {
+        "page_id": "PAGE-005",
+        "name": "角色管理",
+        "route": "/admin/roles",
+        "components": [
+          {
+            "comp_id": "role-table",
+            "comp_type": "DataTable",
+            "props": {}
+          },
+          {
+            "comp_id": "role-form",
+            "comp_type": "FormModal",
+            "props": {}
+          }
+        ],
+        "ep_links": [
+          "EP-006",
+          "EP-007"
+        ]
+      },
+      {
+        "page_id": "PAGE-006",
+        "name": "操作日志",
+        "route": "/admin/logs",
+        "components": [
+          {
+            "comp_id": "log-table",
+            "comp_type": "DataTable",
+            "props": {}
+          },
+          {
+            "comp_id": "log-filter",
+            "comp_type": "FilterBar",
+            "props": {}
+          }
+        ],
+        "ep_links": [
+          "EP-008"
+        ]
+      }
+    ],
+    "html_prototypes": "<html><body style='font-family: sans-serif; background: #f5f5f5; padding: 20px;'>\n<h1 style='color: #333;'>页面原型预览</h1>\n<div style='background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>\n<h2 style='color: #1a73e8; border-bottom: 2px solid #1a73e8; padding-bottom: 8px;'>登录页面</h2>\n<p style='color: #666;'><strong>路由:</strong> /login</p>\n<p style='color: #666;'><strong>关联接口:</strong> EP-001</p>\n<div style='border: 1px dashed #ccc; border-radius: 4px; padding: 16px; margin-top: 12px;'>\n<p style='color: #999; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;'>页面组件</p>\n<div style='background: #e8f0fe; border-radius: 4px; padding: 12px; margin: 8px 0; display: inline-block;'>\n<strong>LoginForm</strong>\n<pre style='font-size: 11px; color: #555; margin: 4px 0 0;'>{'fields': ['username', 'password']}</pre>\n</div>\n</div></div>\n<div style='background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>\n<h2 style='color: #1a73e8; border-bottom: 2px solid #1a73e8; padding-bottom: 8px;'>注册页面</h2>\n<p style='color: #666;'><strong>路由:</strong> /register</p>\n<p style='color: #666;'><strong>关联接口:</strong> EP-002</p>\n<div style='border: 1px dashed #ccc; border-radius: 4px; padding: 16px; margin-top: 12px;'>\n<p style='color: #999; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;'>页面组件</p>\n<div style='background: #e8f0fe; border-radius: 4px; padding: 12px; margin: 8px 0; display: inline-block;'>\n<strong>RegisterForm</strong>\n<pre style='font-size: 11px; color: #555; margin: 4px 0 0;'>{'fields': ['username', 'password', 'email']}</pre>\n</div>\n</div></div>\n<div style='background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>\n<h2 style='color: #1a73e8; border-bottom: 2px solid #1a73e8; padding-bottom: 8px;'>个人中心</h2>\n<p style='color: #666;'><strong>路由:</strong> /profile</p>\n<p style='color: #666;'><strong>关联接口:</strong> EP-003, EP-004</p>\n<div style='border: 1px dashed #ccc; border-radius: 4px; padding: 16px; margin-top: 12px;'>\n<p style='color: #999; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;'>页面组件</p>\n<div style='background: #e8f0fe; border-radius: 4px; padding: 12px; margin: 8px 0; display: inline-block;'>\n<strong>UserInfoCard</strong>\n</div>\n<div style='background: #e8f0fe; border-radius: 4px; padding: 12px; margin: 8px 0; display: inline-block;'>\n<strong>EditForm</strong>\n</div>\n</div></div>\n<div style='background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>\n<h2 style='color: #1a73e8; border-bottom: 2px solid #1a73e8; padding-bottom: 8px;'>用户管理</h2>\n<p style='color: #666;'><strong>路由:</strong> /admin/users</p>\n<p style='color: #666;'><strong>关联接口:</strong> EP-005</p>\n<div style='border: 1px dashed #ccc; border-radius: 4px; padding: 16px; margin-top: 12px;'>\n<p style='color: #999; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;'>页面组件</p>\n<div style='background: #e8f0fe; border-radius: 4px; padding: 12px; margin: 8px 0; display: inline-block;'>\n<strong>DataTable</strong>\n</div>\n<div style='background: #e8f0fe; border-radius: 4px; padding: 12px; margin: 8px 0; display: inline-block;'>\n<strong>SearchBar</strong>\n</div>\n</div></div>\n<div style='background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>\n<h2 style='color: #1a73e8; border-bottom: 2px solid #1a73e8; padding-bottom: 8px;'>角色管理</h2>\n<p style='color: #666;'><strong>路由:</strong> /admin/roles</p>\n<p style='color: #666;'><strong>关联接口:</strong> EP-006, EP-007</p>\n<div style='border: 1px dashed #ccc; border-radius: 4px; padding: 16px; margin-top: 12px;'>\n<p style='color: #999; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;'>页面组件</p>\n<div style='background: #e8f0fe; border-radius: 4px; padding: 12px; margin: 8px 0; display: inline-block;'>\n<strong>DataTable</strong>\n</div>\n<div style='background: #e8f0fe; border-radius: 4px; padding: 12px; margin: 8px 0; display: inline-block;'>\n<strong>FormModal</strong>\n</div>\n</div></div>\n<div style='background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>\n<h2 style='color: #1a73e8; border-bottom: 2px solid #1a73e8; padding-bottom: 8px;'>操作日志</h2>\n<p style='color: #666;'><strong>路由:</strong> /admin/logs</p>\n<p style='color: #666;'><strong>关联接口:</strong> EP-008</p>\n<div style='border: 1px dashed #ccc; border-radius: 4px; padding: 16px; margin-top: 12px;'>\n<p style='color: #999; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;'>页面组件</p>\n<div style='background: #e8f0fe; border-radius: 4px; padding: 12px; margin: 8px 0; display: inline-block;'>\n<strong>DataTable</strong>\n</div>\n<div style='background: #e8f0fe; border-radius: 4px; padding: 12px; margin: 8px 0; display: inline-block;'>\n<strong>FilterBar</strong>\n</div>\n</div></div>\n</body></html>",
+    "version": "1.0",
+    "status": "approved"
+  },
+  "code": {
+    "backend_files": [
+      {
+        "path": "backend/main.py",
+        "content": "from fastapi import FastAPI\nfrom fastapi.middleware.cors import CORSMiddleware\n\napp = FastAPI(title=\"Waterfall API\", version=\"1.0.0\")\n\napp.add_middleware(\n    CORSMiddleware,\n    allow_origins=[\"*\"],\n    allow_credentials=True,\n    allow_methods=[\"*\"],\n    allow_headers=[\"*\"],\n)\n\n@app.get(\"/health\")\nasync def health():\n    return {\"status\": \"ok\", \"version\": \"1.0.0\"}\n",
+        "language": "python"
+      },
+      {
+        "path": "backend/models.py",
+        "content": "from sqlalchemy import Column, Integer, String, DateTime, Text, Float\nfrom sqlalchemy.ext.declarative import declarative_base\nfrom datetime import datetime\nfrom typing import Optional\n\nBase = declarative_base()\n\n\nclass Users(Base):\n    __tablename__ = \"users\"\n    id: Optional[int] = None\n    username: Optional[str] = None\n    password_hash: Optional[str] = None\n    email: Optional[str] = None\n    phone: Optional[str] = None\n    status: Optional[int] = None\n    created_at: Optional[datetime] = None\n    updated_at: Optional[datetime] = None\nclass Roles(Base):\n    __tablename__ = \"roles\"\n    id: Optional[int] = None\n    name: Optional[str] = None\n    code: Optional[str] = None\n    description: Optional[str] = None\n    created_at: Optional[datetime] = None\nclass UserRoles(Base):\n    __tablename__ = \"user_roles\"\n    id: Optional[int] = None\n    user_id: Optional[int] = None\n    role_id: Optional[int] = None\nclass OperationLogs(Base):\n    __tablename__ = \"operation_logs\"\n    id: Optional[int] = None\n    user_id: Optional[int] = None\n    action: Optional[str] = None\n    target_type: Optional[str] = None\n    target_id: Optional[str] = None\n    detail: Optional[str] = None\n    ip_address: Optional[str] = None\n    created_at: Optional[datetime] = None\n",
+        "language": "python"
+      },
+      {
+        "path": "backend/handlers/ep_001.py",
+        "content": "\nasync def handle_ep_001(request, response):\n    \"\"\"用户登录\"\"\"\n    # TODO: implement POST /api/v1/auth/login\n    return {\"message\": \"用户登录 - not implemented\"}\n",
+        "language": "python"
+      },
+      {
+        "path": "backend/handlers/ep_002.py",
+        "content": "\nasync def handle_ep_002(request, response):\n    \"\"\"用户注册\"\"\"\n    # TODO: implement POST /api/v1/auth/register\n    return {\"message\": \"用户注册 - not implemented\"}\n",
+        "language": "python"
+      },
+      {
+        "path": "backend/handlers/ep_003.py",
+        "content": "\nasync def handle_ep_003(request, response):\n    \"\"\"获取当前用户信息\"\"\"\n    # TODO: implement GET /api/v1/users/me\n    return {\"message\": \"获取当前用户信息 - not implemented\"}\n",
+        "language": "python"
+      },
+      {
+        "path": "backend/handlers/ep_004.py",
+        "content": "\nasync def handle_ep_004(request, response):\n    \"\"\"更新当前用户信息\"\"\"\n    # TODO: implement PUT /api/v1/users/me\n    return {\"message\": \"更新当前用户信息 - not implemented\"}\n",
+        "language": "python"
+      },
+      {
+        "path": "backend/handlers/ep_005.py",
+        "content": "\nasync def handle_ep_005(request, response):\n    \"\"\"用户列表（管理员）\"\"\"\n    # TODO: implement GET /api/v1/users\n    return {\"message\": \"用户列表（管理员） - not implemented\"}\n",
+        "language": "python"
+      },
+      {
+        "path": "backend/handlers/ep_006.py",
+        "content": "\nasync def handle_ep_006(request, response):\n    \"\"\"角色列表\"\"\"\n    # TODO: implement GET /api/v1/roles\n    return {\"message\": \"角色列表 - not implemented\"}\n",
+        "language": "python"
+      },
+      {
+        "path": "backend/handlers/ep_007.py",
+        "content": "\nasync def handle_ep_007(request, response):\n    \"\"\"创建角色\"\"\"\n    # TODO: implement POST /api/v1/roles\n    return {\"message\": \"创建角色 - not implemented\"}\n",
+        "language": "python"
+      },
+      {
+        "path": "backend/handlers/ep_008.py",
+        "content": "\nasync def handle_ep_008(request, response):\n    \"\"\"操作日志列表\"\"\"\n    # TODO: implement GET /api/v1/operation-logs\n    return {\"message\": \"操作日志列表 - not implemented\"}\n",
+        "language": "python"
+      },
+      {
+        "path": "backend/requirements.txt",
+        "content": "fastapi==0.104.1\nuvicorn==0.24.0\nsqlalchemy==2.0.23\npydantic==2.5.2\npytest==7.4.3\nhttpx==0.25.2\n",
+        "language": "text"
+      }
+    ],
+    "frontend_files": [
+      {
+        "path": "frontend/src/api/index.ts",
+        "content": "import axios from 'axios';\n\nconst api = axios.create({\n  baseURL: '/api/v1',\n  timeout: 10000,\n});\n\napi.interceptors.request.use((config) => {\n  const token = localStorage.getItem('token');\n  if (token) {\n    config.headers.Authorization = `Bearer ${token}`;\n  }\n  return config;\n});\n\nexport const ep_001 = async (params?: any) => {\n  return api.{post}(`/api/v1/auth/login`, params);\n};\n\nexport const ep_002 = async (params?: any) => {\n  return api.{post}(`/api/v1/auth/register`, params);\n};\n\nexport const ep_003 = async (params?: any) => {\n  return api.{get}(`/api/v1/users/me`, params);\n};\n\nexport const ep_004 = async (params?: any) => {\n  return api.{put}(`/api/v1/users/me`, params);\n};\n\nexport const ep_005 = async (params?: any) => {\n  return api.{get}(`/api/v1/users`, params);\n};\n\nexport const ep_006 = async (params?: any) => {\n  return api.{get}(`/api/v1/roles`, params);\n};\n\nexport const ep_007 = async (params?: any) => {\n  return api.{post}(`/api/v1/roles`, params);\n};\n\nexport const ep_008 = async (params?: any) => {\n  return api.{get}(`/api/v1/operation-logs`, params);\n};\n\n\nexport default api;\n",
+        "language": "typescript"
+      },
+      {
+        "path": "frontend/src/types/index.ts",
+        "content": "export interface User {\n  id: number;\n  username: string;\n  email: string;\n  phone?: string;\n  status: number;\n}\n\nexport interface ApiResponse<T> {\n  code: number;\n  message: string;\n  data: T;\n}\n\nexport const API_ENDPOINTS = [\n  {\n    \"id\": \"EP-001\",\n    \"method\": \"POST\",\n    \"path\": \"/api/v1/auth/login\",\n    \"summary\": \"用户登录\"\n  },\n  {\n    \"id\": \"EP-002\",\n    \"method\": \"POST\",\n    \"path\": \"/api/v1/auth/register\",\n    \"summary\": \"用户注册\"\n  },\n  {\n    \"id\": \"EP-003\",\n    \"method\": \"GET\",\n    \"path\": \"/api/v1/users/me\",\n    \"summary\": \"获取当前用户信息\"\n  },\n  {\n    \"id\": \"EP-004\",\n    \"method\": \"PUT\",\n    \"path\": \"/api/v1/users/me\",\n    \"summary\": \"更新当前用户信息\"\n  },\n  {\n    \"id\": \"EP-005\",\n    \"method\": \"GET\",\n    \"path\": \"/api/v1/users\",\n    \"summary\": \"用户列表（管理员）\"\n  },\n  {\n    \"id\": \"EP-006\",\n    \"method\": \"GET\",\n    \"path\": \"/api/v1/roles\",\n    \"summary\": \"角色列表\"\n  },\n  {\n    \"id\": \"EP-007\",\n    \"method\": \"POST\",\n    \"path\": \"/api/v1/roles\",\n    \"summary\": \"创建角色\"\n  },\n  {\n    \"id\": \"EP-008\",\n    \"method\": \"GET\",\n    \"path\": \"/api/v1/operation-logs\",\n    \"summary\": \"操作日志列表\"\n  }\n];\n",
+        "language": "typescript"
+      },
+      {
+        "path": "frontend/src/pages/index.tsx",
+        "content": "import React from 'react';\nimport { API_ENDPOINTS } from '../types';\n\nconst 登录页面: React.FC = () => {\n  return (\n    <div className=\"page-container\">\n      <h1>登录页面</h1>\n      <p>Route: /login</p>\n      <div className=\"page-components\">\n        LoginForm\n      </div>\n    </div>\n  );\n};\n\nexport default 登录页面;\n\nimport React from 'react';\nimport { API_ENDPOINTS } from '../types';\n\nconst 注册页面: React.FC = () => {\n  return (\n    <div className=\"page-container\">\n      <h1>注册页面</h1>\n      <p>Route: /register</p>\n      <div className=\"page-components\">\n        RegisterForm\n      </div>\n    </div>\n  );\n};\n\nexport default 注册页面;\n\nimport React from 'react';\nimport { API_ENDPOINTS } from '../types';\n\nconst 个人中心: React.FC = () => {\n  return (\n    <div className=\"page-container\">\n      <h1>个人中心</h1>\n      <p>Route: /profile</p>\n      <div className=\"page-components\">\n        UserInfoCard\n      </div>\n    </div>\n  );\n};\n\nexport default 个人中心;\n\nimport React from 'react';\nimport { API_ENDPOINTS } from '../types';\n\nconst 用户管理: React.FC = () => {\n  return (\n    <div className=\"page-container\">\n      <h1>用户管理</h1>\n      <p>Route: /admin/users</p>\n      <div className=\"page-components\">\n        DataTable\n      </div>\n    </div>\n  );\n};\n\nexport default 用户管理;\n\nimport React from 'react';\nimport { API_ENDPOINTS } from '../types';\n\nconst 角色管理: React.FC = () => {\n  return (\n    <div className=\"page-container\">\n      <h1>角色管理</h1>\n      <p>Route: /admin/roles</p>\n      <div className=\"page-components\">\n        DataTable\n      </div>\n    </div>\n  );\n};\n\nexport default 角色管理;\n\nimport React from 'react';\nimport { API_ENDPOINTS } from '../types';\n\nconst 操作日志: React.FC = () => {\n  return (\n    <div className=\"page-container\">\n      <h1>操作日志</h1>\n      <p>Route: /admin/logs</p>\n      <div className=\"page-components\">\n        DataTable\n      </div>\n    </div>\n  );\n};\n\nexport default 操作日志;\n",
+        "language": "typescript"
+      },
+      {
+        "path": "frontend/package.json",
+        "content": "{\n  \"name\": \"waterfall-frontend\",\n  \"version\": \"1.0.0\",\n  \"private\": true,\n  \"dependencies\": {\n    \"react\": \"^18.2.0\",\n    \"react-dom\": \"^18.2.0\",\n    \"react-router-dom\": \"^6.20.0\",\n    \"axios\": \"^1.6.2\",\n    \"antd\": \"^5.12.0\",\n    \"@ant-design/icons\": \"^5.2.6\"\n  },\n  \"scripts\": {\n    \"start\": \"react-scripts start\",\n    \"build\": \"react-scripts build\",\n    \"test\": \"react-scripts test\"\n  },\n  \"devDependencies\": {\n    \"typescript\": \"^5.3.2\",\n    \"@types/react\": \"^18.2.39\",\n    \"@types/react-dom\": \"^18.2.17\"\n  }\n}\n",
+        "language": "json"
+      }
+    ],
+    "ep_to_code_map": {
+      "EP-001": "handlers/ep_001.py",
+      "EP-002": "handlers/ep_002.py",
+      "EP-003": "handlers/ep_003.py",
+      "EP-004": "handlers/ep_004.py",
+      "EP-005": "handlers/ep_005.py",
+      "EP-006": "handlers/ep_006.py",
+      "EP-007": "handlers/ep_007.py",
+      "EP-008": "handlers/ep_008.py"
+    },
+    "version": "1.0",
+    "status": "approved"
+  },
+  "test": {
+    "test_cases": [],
+    "test_code": "",
+    "coverage_map": {},
+    "version": "1.0",
+    "status": "draft"
+  },
+  "phase_status": {
+    "requirements": "approved",
+    "domain_model": "approved",
+    "database": "approved",
+    "interface": "approved",
+    "sequence": "approved",
+    "prototype": "approved",
+    "code": "approved",
+    "test": "pending"
+  },
+  "trace_count": 0
+}
