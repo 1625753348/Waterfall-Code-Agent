@@ -1,8 +1,10 @@
 from __future__ import annotations
+import json
 from typing import Dict, Any, List
 from shared.domain_model import (
     UnifiedDomainModel, InterfaceArtifact, EndpointDef,
 )
+from backend.llm_client import chat_json, get_config
 
 
 class InterfaceAgent:
@@ -13,7 +15,18 @@ class InterfaceAgent:
         if not domain_model or not domain_model.use_cases:
             return {"error": "No use cases found. Complete Phase 2 first."}
 
-        endpoints = self._generate_endpoints(domain_model)
+        cfg = get_config()
+        if cfg.enabled:
+            try:
+                uc_str = json.dumps([u.to_dict() for u in domain_model.use_cases], ensure_ascii=False)
+                system_prompt = "你是一个API设计师。根据用例生成RESTful API端点、OpenAPI规范和关联映射。直接输出JSON。"
+                user_prompt = f"用例：{uc_str}\n\n输出JSON格式：{{\"endpoints\":[{{\"ep_id\":\"EP-001\",\"method\":\"POST\",\"path\":\"/api/v1/...\",\"summary\":\"...\",\"request_schema\":{{\"type\":\"object\",\"properties\":{{}},\"required\":[]}},\"response_schema\":{{\"type\":\"object\",\"properties\":{{}}}},\"req_links\":[\"REQ-001\"],\"uc_links\":[\"UC-001\"]}}],\"openapi_spec\":\"...\",\"uc_to_ep_map\":{{\"UC-001\":[\"EP-001\"]}},\"req_to_ep_map\":{{\"REQ-001\":[\"EP-001\"]}}}}"
+                result = chat_json(system_prompt, user_prompt)
+                endpoints = [EndpointDef(**e) for e in result.get("endpoints", [])]
+            except Exception:
+                endpoints = self._generate_endpoints(domain_model)
+        else:
+            endpoints = self._generate_endpoints(domain_model)
         artifact = InterfaceArtifact()
         artifact.endpoints = endpoints
         artifact.uc_to_ep_map = self._build_uc_map(endpoints)

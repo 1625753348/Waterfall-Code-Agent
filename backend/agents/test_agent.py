@@ -1,8 +1,10 @@
 from __future__ import annotations
+import json
 from typing import Dict, Any, List
 from shared.domain_model import (
     UnifiedDomainModel, TestArtifact, TestCase,
 )
+from backend.llm_client import chat_json, get_config
 
 
 class TestAgent:
@@ -13,7 +15,21 @@ class TestAgent:
         domain = model.domain_model
         interface = model.interface
 
-        test_cases = self._generate_test_cases(reqs, domain, interface)
+        cfg = get_config()
+        if cfg.enabled:
+            try:
+                context = {}
+                if reqs: context["requirements"] = [i.to_dict() for i in reqs.items]
+                if domain: context["use_cases"] = [u.to_dict() for u in domain.use_cases]
+                if interface: context["endpoints"] = [e.to_dict() for e in interface.endpoints]
+                system_prompt = "你是一个测试工程师。根据需求、用例和API端点生成测试用例和测试代码。直接输出JSON。"
+                user_prompt = f"上下文：{json.dumps(context, ensure_ascii=False)}\n\n输出JSON格式：{{\"test_cases\":[{{\"tc_id\":\"TC-001\",\"title\":\"...\",\"description\":\"...\",\"steps\":[\"...\"],\"expected\":\"...\",\"test_type\":\"functional\",\"req_links\":[\"REQ-001\"],\"ep_links\":[\"EP-001\"],\"preconditions\":[\"...\"]}}],\"test_code\":\"...\",\"coverage_map\":{{\"REQ-001\":[\"TC-001\"]}}}}"
+                result = chat_json(system_prompt, user_prompt)
+                test_cases = [TestCase(**tc) for tc in result.get("test_cases", [])]
+            except Exception:
+                test_cases = self._generate_test_cases(reqs, domain, interface)
+        else:
+            test_cases = self._generate_test_cases(reqs, domain, interface)
 
         artifact = TestArtifact()
         artifact.test_cases = test_cases

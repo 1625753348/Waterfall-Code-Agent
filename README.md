@@ -34,11 +34,43 @@ user ←→ FastAPI (backend/main.py) ←→ 8 Agents (backend/agents/)
 | 7 | 代码生成 | `CodeAgent` | 后端 + 前端代码文件 |
 | 8 | 测试用例 | `TestAgent` | 测试用例、覆盖映射、测试代码 |
 
+## LLM 配置（可选）
+
+系统默认使用**规则引擎**生成各阶段产物。配置以下环境变量后可切换至 **LLM 驱动模式**，由大模型生成更高质量的输出。
+
+| 变量 | 说明 | 默认值 |
+|------|------|--------|
+| `LLM_ENABLED` | 启用 LLM 模式 (`true`/`false`) | `false` |
+| `LLM_API_KEY` | API 密钥 | `""` |
+| `LLM_API_BASE` | API 地址（兼容 OpenAI 格式） | `https://api.openai.com/v1` |
+| `LLM_MODEL` | 模型名 | `gpt-4o` |
+| `LLM_MAX_TOKENS` | 最大输出 Token 数 | `4096` |
+| `LLM_TEMPERATURE` | 温度参数 | `0.7` |
+
+**示例 — 使用 OpenAI：**
+```bash
+set LLM_ENABLED=true
+set LLM_API_KEY=sk-xxxxx
+set LLM_MODEL=gpt-4o
+python start.py
+```
+
+**示例 — 使用 DeepSeek：**
+```bash
+set LLM_ENABLED=true
+set LLM_API_KEY=sk-xxxxx
+set LLM_API_BASE=https://api.deepseek.com/v1
+set LLM_MODEL=deepseek-chat
+python start.py
+```
+
+> LLM 模式下，每个 Agent 独立构造 prompt 调用大模型；如果调用失败自动降级到规则引擎，保证系统稳定。
+
 ## 快速开始
 
 ```bash
 # 安装依赖
-pip install fastapi uvicorn pydantic
+pip install fastapi uvicorn pydantic httpx
 
 # 启动服务（开发模式，支持热重载）
 python start.py

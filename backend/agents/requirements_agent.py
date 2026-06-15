@@ -1,7 +1,9 @@
 from __future__ import annotations
+import json
 import re
 from typing import Dict, Any, List, Tuple
 from shared.domain_model import RequirementsArtifact, RequirementItem, UnifiedDomainModel
+from backend.llm_client import chat_json, get_config
 
 
 class RequirementsAgent:
@@ -28,8 +30,20 @@ class RequirementsAgent:
         if not raw_input:
             raw_input = model.requirements.raw_input
 
-        items = self._parse_requirements(raw_input)
-        gaps = self._detect_gaps(raw_input, items)
+        cfg = get_config()
+        if cfg.enabled:
+            try:
+                system_prompt = "你是一个资深需求分析师。将原始需求拆解为结构化需求项，并检测缺失的词汇维度。直接输出JSON，不要markdown包裹。"
+                user_prompt = f"原始需求：\n{raw_input}\n\n请输出 JSON：{{ \"items\": [{{ \"req_id\": \"REQ-001\", \"title\": \"...\", \"description\": \"...\", \"priority\": \"high|medium|low\", \"category\": \"functional|non-functional|ui|api|data\", \"status\": \"draft\", \"gap_notes\": \"\" }}], \"vocab_gaps\": [\"缺失维度名\"] }}"
+                result = chat_json(system_prompt, user_prompt)
+                items = [RequirementItem(**i) if all(k in i for k in ("req_id","title","description","priority","category","status")) else RequirementItem(req_id=i.get("req_id","REQ-000"),title=i.get("title",""),description=i.get("description",""),priority=i.get("priority","medium"),category=i.get("category","functional"),status=i.get("status","draft"),gap_notes=i.get("gap_notes","")) for i in result.get("items",[])]
+                gaps = result.get("vocab_gaps", [])
+            except Exception:
+                items = self._parse_requirements(raw_input)
+                gaps = self._detect_gaps(raw_input, items)
+        else:
+            items = self._parse_requirements(raw_input)
+            gaps = self._detect_gaps(raw_input, items)
 
         artifact = RequirementsArtifact()
         artifact.raw_input = raw_input

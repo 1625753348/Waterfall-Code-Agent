@@ -1,8 +1,10 @@
 from __future__ import annotations
+import json
 from typing import Dict, Any, List
 from shared.domain_model import (
     UnifiedDomainModel, PrototypeArtifact, PageDef, PageComponent,
 )
+from backend.llm_client import chat_json, get_config
 
 
 class PrototypeAgent:
@@ -14,10 +16,27 @@ class PrototypeAgent:
         if not interface or not interface.endpoints:
             return {"error": "No endpoints found. Complete Phase 4 first."}
 
-        pages = self._generate_pages(interface, domain_model)
+        cfg = get_config()
+        if cfg.enabled:
+            try:
+                ep_str = json.dumps([e.to_dict() for e in interface.endpoints], ensure_ascii=False)
+                system_prompt = "你是一个UI/UX设计师。根据API端点生成页面原型定义和HTML原型预览。直接输出JSON。"
+                user_prompt = f"API端点：{ep_str}\n\n输出JSON格式：{{\"pages\":[{{\"page_id\":\"PAGE-001\",\"name\":\"登录页面\",\"route\":\"/login\",\"ep_links\":[\"EP-001\"],\"components\":[{{\"comp_id\":\"login-form\",\"comp_type\":\"LoginForm\",\"props\":{{\"fields\":[\"username\",\"password\"]}}}}]}}],\"html_prototypes\":\"<html>...预览HTML...</html>\"}}"
+                result = chat_json(system_prompt, user_prompt)
+                pages = []
+                for p in result.get("pages", []):
+                    comps = [PageComponent(c.get("comp_id","c"),c["comp_type"],c.get("props",{})) for c in p.get("components",[])]
+                    pages.append(PageDef(p["page_id"], p["name"], p["route"], comps, ep_links=p.get("ep_links",[])))
+                html_prototypes = result.get("html_prototypes", "")
+            except Exception:
+                pages = self._generate_pages(interface, domain_model)
+                html_prototypes = self._generate_html(pages)
+        else:
+            pages = self._generate_pages(interface, domain_model)
+            html_prototypes = self._generate_html(pages)
         artifact = PrototypeArtifact()
         artifact.pages = pages
-        artifact.html_prototypes = self._generate_html(pages)
+        artifact.html_prototypes = html_prototypes
 
         model.prototype = artifact
         return {

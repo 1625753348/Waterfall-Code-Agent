@@ -5,6 +5,7 @@ import json
 from shared.domain_model import (
     UnifiedDomainModel, CodeArtifact, CodeFile,
 )
+from backend.llm_client import chat_json, get_config
 
 
 class CodeAgent:
@@ -16,22 +17,38 @@ class CodeAgent:
         if not interface or not interface.endpoints:
             return {"error": "No endpoints found. Complete Phase 4 first."}
 
-        backend_files = self._generate_backend(interface, database, model)
-        frontend_files = self._generate_frontend(interface, model)
-        ep_map = {}
-        for ep in interface.endpoints:
-            ep_map[ep.ep_id] = f"handlers/{ep.ep_id.lower().replace('-', '_')}.py"
+        cfg = get_config()
+        if cfg.enabled:
+            try:
+                context = {
+                    "endpoints": [e.to_dict() for e in interface.endpoints],
+                    "tables": [t.to_dict() for t in database.tables] if database else [],
+                }
+                system_prompt = "你是一个全栈工程师。根据API端点和数据库表生成完整的后端(Python/FastAPI/SQLAlchemy)和前端(TypeScript/React)代码。直接输出JSON，每条代码文件包含path和content字段。"
+                user_prompt = f"上下文：{json.dumps(context, ensure_ascii=False)}\n\n输出JSON格式：{{\"backend_files\":[{{\"path\":\"backend/main.py\",\"content\":\"...\",\"language\":\"python\"}}],\"frontend_files\":[{{\"path\":\"frontend/src/api/index.ts\",\"content\":\"...\",\"language\":\"typescript\"}}],\"ep_to_code_map\":{{\"EP-001\":\"handlers/ep_001.py\"}}}}"
+                result = chat_json(system_prompt, user_prompt)
+                backend_files = [CodeFile(f["path"], f["content"], f.get("language","python")) for f in result.get("backend_files",[])]
+                frontend_files = [CodeFile(f["path"], f["content"], f.get("language","typescript")) for f in result.get("frontend_files",[])]
+                ep_to_code_map = result.get("ep_to_code_map", {})
+            except Exception:
+                backend_files = self._generate_backend(interface, database, model)
+                frontend_files = self._generate_frontend(interface, model)
+                ep_to_code_map = {ep.ep_id: f"handlers/{ep.ep_id.lower().replace('-', '_')}.py" for ep in interface.endpoints}
+        else:
+            backend_files = self._generate_backend(interface, database, model)
+            frontend_files = self._generate_frontend(interface, model)
+            ep_to_code_map = {ep.ep_id: f"handlers/{ep.ep_id.lower().replace('-', '_')}.py" for ep in interface.endpoints}
 
         artifact = CodeArtifact()
         artifact.backend_files = backend_files
         artifact.frontend_files = frontend_files
-        artifact.ep_to_code_map = ep_map
+        artifact.ep_to_code_map = ep_to_code_map
 
         model.code = artifact
         return {
             "backend_files": [f.to_dict() for f in backend_files],
             "frontend_files": [f.to_dict() for f in frontend_files],
-            "ep_to_code_map": ep_map,
+            "ep_to_code_map": ep_to_code_map,
         }
 
     def _generate_backend(self, interface, database, model) -> List[CodeFile]:

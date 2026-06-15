@@ -1,8 +1,10 @@
 from __future__ import annotations
+import json
 from typing import Dict, Any, List
 from shared.domain_model import (
     UnifiedDomainModel, DatabaseArtifact, TableDef, ColumnDef,
 )
+from backend.llm_client import chat_json, get_config
 
 
 class DatabaseAgent:
@@ -13,7 +15,18 @@ class DatabaseAgent:
         if not domain_model or not domain_model.use_cases:
             return {"error": "No use cases found. Complete Phase 2 first."}
 
-        tables = self._generate_tables(domain_model)
+        cfg = get_config()
+        if cfg.enabled:
+            try:
+                uc_str = json.dumps([u.to_dict() for u in domain_model.use_cases], ensure_ascii=False)
+                system_prompt = "你是一个数据库架构师。根据用例生成表定义、多方言DDL和ER图PlantUML代码。直接输出JSON。"
+                user_prompt = f"用例：{uc_str}\n\n输出JSON格式：{{\"tables\":[{{\"table_name\":\"users\",\"columns\":[{{\"name\":\"id\",\"dtype\":\"BIGINT\",\"nullable\":false,\"pk\":true,\"fk\":\"\",\"default\":\"\",\"comment\":\"\"}}],\"comment\":\"用户表\"}}],\"ddl_mysql\":\"...\",\"ddl_postgres\":\"...\",\"ddl_sqlite\":\"...\",\"plantuml_er\":\"@startuml\\n...\\n@enduml\",\"uc_links\":{{\"UC-001\":[\"users\"]}}}}"
+                result = chat_json(system_prompt, user_prompt)
+                tables = [TableDef(t["table_name"],[ColumnDef(**c) for c in t.get("columns",[])],comment=t.get("comment","")) for t in result.get("tables",[])]
+            except Exception:
+                tables = self._generate_tables(domain_model)
+        else:
+            tables = self._generate_tables(domain_model)
         artifact = DatabaseArtifact()
         artifact.tables = tables
         artifact.ddl_mysql = self._generate_ddl(tables, "mysql")

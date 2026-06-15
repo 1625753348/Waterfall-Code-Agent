@@ -1,8 +1,10 @@
 from __future__ import annotations
+import json
 from typing import Dict, Any, List
 from shared.domain_model import (
     UnifiedDomainModel, DomainModelArtifact, Actor, UseCase, RequirementItem,
 )
+from backend.llm_client import chat_json, get_config
 
 
 class DomainModelAgent:
@@ -13,13 +15,29 @@ class DomainModelAgent:
         if not reqs or not reqs.items:
             return {"error": "No requirements found. Complete Phase 1 first."}
 
-        actors = self._generate_actors(reqs.items)
-        use_cases = self._generate_use_cases(reqs.items, actors)
+        cfg = get_config()
+        if cfg.enabled:
+            try:
+                reqs_str = json.dumps([i.to_dict() for i in reqs.items], ensure_ascii=False)
+                system_prompt = "你是一个领域建模专家。根据需求项生成参与者、用例和PlantUML用例图代码。直接输出JSON。"
+                user_prompt = f"需求项：{reqs_str}\n\n输出JSON格式：{{\"actors\":[{{\"actor_id\":\"ACT-001\",\"name\":\"...\",\"description\":\"...\"}}],\"use_cases\":[{{\"uc_id\":\"UC-001\",\"name\":\"...\",\"description\":\"...\",\"actors\":[\"ACT-001\"],\"preconditions\":[\"...\"],\"postconditions\":[\"...\"],\"main_flow\":[\"1. ...\",\"2. ...\"],\"alt_flows\":[[\"...\"]],\"req_links\":[\"REQ-001\"]}}],\"plantuml_code\":\"@startuml\\n...\\n@enduml\"}}"
+                result = chat_json(system_prompt, user_prompt)
+                actors = [Actor(**a) for a in result.get("actors", [])]
+                use_cases = [UseCase(**u) for u in result.get("use_cases", [])]
+                plantuml_code = result.get("plantuml_code", "")
+            except Exception:
+                actors = self._generate_actors(reqs.items)
+                use_cases = self._generate_use_cases(reqs.items, actors)
+                plantuml_code = self._generate_plantuml(actors, use_cases)
+        else:
+            actors = self._generate_actors(reqs.items)
+            use_cases = self._generate_use_cases(reqs.items, actors)
+            plantuml_code = self._generate_plantuml(actors, use_cases)
 
         artifact = DomainModelArtifact()
         artifact.actors = actors
         artifact.use_cases = use_cases
-        artifact.plantuml_code = self._generate_plantuml(actors, use_cases)
+        artifact.plantuml_code = plantuml_code
 
         model.domain_model = artifact
         return {

@@ -1,8 +1,10 @@
 from __future__ import annotations
+import json
 from typing import Dict, Any, List
 from shared.domain_model import (
     UnifiedDomainModel, SequenceArtifact, SequenceDef, SequenceMessage,
 )
+from backend.llm_client import chat_json, get_config
 
 
 class SequenceAgent:
@@ -13,10 +15,27 @@ class SequenceAgent:
         if not domain_model or not domain_model.use_cases:
             return {"error": "No use cases found. Complete Phase 2 first."}
 
-        sequences = self._generate_sequences(domain_model)
+        cfg = get_config()
+        if cfg.enabled:
+            try:
+                uc_str = json.dumps([u.to_dict() for u in domain_model.use_cases], ensure_ascii=False)
+                system_prompt = "你是一个时序图专家。根据用例生成序列图定义和PlantUML代码。直接输出JSON。"
+                user_prompt = f"用例：{uc_str}\n\n输出JSON格式：{{\"sequences\":[{{\"seq_id\":\"SEQ-001\",\"name\":\"...\",\"participants\":[\"用户\",\"系统\",\"数据库\"],\"messages\":[{{\"source\":\"用户\",\"target\":\"系统\",\"message\":\"...\"}}]}}],\"plantuml_code\":\"@startuml\\n...\\n@enduml\"}}"
+                result = chat_json(system_prompt, user_prompt)
+                sequences = []
+                for s in result.get("sequences", []):
+                    msgs = [SequenceMessage(**m) for m in s.get("messages", [])]
+                    sequences.append(SequenceDef(s["seq_id"], s["name"], s.get("participants", []), msgs))
+                plantuml_code = result.get("plantuml_code", "")
+            except Exception:
+                sequences = self._generate_sequences(domain_model)
+                plantuml_code = self._generate_plantuml(sequences)
+        else:
+            sequences = self._generate_sequences(domain_model)
+            plantuml_code = self._generate_plantuml(sequences)
         artifact = SequenceArtifact()
         artifact.sequences = sequences
-        artifact.plantuml_code = self._generate_plantuml(sequences)
+        artifact.plantuml_code = plantuml_code
 
         model.sequence = artifact
         return {
